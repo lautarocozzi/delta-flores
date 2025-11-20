@@ -1,10 +1,12 @@
 package DeltaFlores.web.security;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -22,15 +24,23 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
-@RequiredArgsConstructor
+@EnableGlobalMethodSecurity(
+        prePostEnabled = false, securedEnabled = false, jsr250Enabled = true
+)
+@Log4j2
 public class WebSecurityConfig {
 
-    private final JwtAuthorizationFilter jwtAuthorizationFilter;
     private final JwtUtils jwtUtils;
+
+
+    @Autowired
+    public WebSecurityConfig(JwtUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        log.info("Configuring Security Filter Chain...");
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtUtils, authenticationManager);
         jwtAuthenticationFilter.setFilterProcessesUrl("/login");
 
@@ -39,14 +49,16 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/login", "/swagger-" +
+                                "ui/**", "/v3/api-docs/**", "/register").permitAll() // Allow registration
+                        // .anyRequest().authenticated())
+                        .anyRequest().permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/api/logout")
                         .deleteCookies("jwt")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler()))
                 .addFilter(jwtAuthenticationFilter)
-                .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthorizationFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

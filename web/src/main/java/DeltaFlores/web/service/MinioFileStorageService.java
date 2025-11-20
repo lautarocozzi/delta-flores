@@ -51,4 +51,21 @@ public class MinioFileStorageService implements FileStorageService {
             throw new RuntimeException("Error uploading file to MinIO: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public void deleteFile(String fileUrl) {
+        try {
+            String objectName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            minioClient.removeObject(
+                    io.minio.RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .build()
+            );
+        } catch (Exception e) {
+            // Log the error but don't re-throw to avoid breaking a larger transaction
+            // if, for example, the file was already deleted manually.
+            System.err.println("Error deleting file from MinIO: " + e.getMessage());
+        }
+    }
 }

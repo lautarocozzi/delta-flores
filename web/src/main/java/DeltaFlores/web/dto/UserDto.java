@@ -1,7 +1,7 @@
 package DeltaFlores.web.dto;
 
 
-import DeltaFlores.web.entities.User.Rol;
+import DeltaFlores.web.entities.AppRole;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.EnumType;
@@ -20,16 +20,33 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 public class UserDto implements Serializable {
+
     private Long id;
+
     private String username;
+
     private String nombre;
+
     private String apellido;
+
     @JsonIgnore
     private String password;
+
     @Enumerated(EnumType.STRING)
-    private Rol rol;
+    private AppRole rol;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDate fechaRegistro;
+
+    public UserDto(String nombre, String apellido, String username, AppRole rol, String password, LocalDate registryDate) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.username = username;
+        this.rol = rol;
+        this.password= password;
+        this.fechaRegistro= registryDate;
+
+    }
 
 }

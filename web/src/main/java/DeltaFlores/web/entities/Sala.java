@@ -18,8 +18,13 @@ public class Sala {
     private String nombre;
     private String descripcion;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.DETACH)
-    private Set<Planta> plantas = new HashSet<>();
 
-
+            private String horasLuz;
+            private Double humedad;
+            private Double temperaturaAmbiente;
+        
+        
+            @OneToMany(mappedBy = "sala", cascade = CascadeType.DETACH)
+            private Set<Planta> plantas = new HashSet<>();
+        
 }

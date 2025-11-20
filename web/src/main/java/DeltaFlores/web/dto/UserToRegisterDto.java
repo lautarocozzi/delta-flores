@@ -21,16 +21,15 @@ public class UserToRegisterDto {
     private String apellido;
     private String email;
     private String password;
-    private String rol;
-    private LocalDate registryDate;
-    // private Set<PlantaDto> plantas = new HashSet<>();
 
-    public UserToRegisterDto(Long id, String nombre, String apellido, String email, String password, String rol, LocalDate fechaRegistro) {
+    private LocalDate registryDate;
+    private Set<PlantaDto> plantas = new HashSet<>();
+
+    public UserToRegisterDto(Long id, String nombre, String apellido, String email, String password, LocalDate fechaRegistro) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.email = email;
         this.password = password;
-        this.rol = rol;
         this.registryDate = fechaRegistro;
     }
 

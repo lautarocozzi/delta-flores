@@ -11,7 +11,8 @@ import lombok.Setter;
 @DiscriminatorValue("WATERING")
 public class WateringEvent extends PlantEvent {
 
-    private Integer phAgua;
-    private Integer ecAgua;
-    private Integer tempAgua;
+    private double phAgua;
+    private double ecAgua;
+    private double tempAgua;
+
 }

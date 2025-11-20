@@ -11,6 +11,6 @@ import java.util.Optional;
 public interface SalaRepository extends JpaRepository<Sala, Long> {
     List<Sala> findAll();
     Optional<Sala> findById(Long id);
-    Sala save(Sala category);
+    Sala save(Sala sala);
     void deleteById(Long id);
 }

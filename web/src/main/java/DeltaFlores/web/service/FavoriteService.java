@@ -36,7 +36,7 @@ public class FavoriteService {
         Authentication auth = getAuth();
         Favorite favorite = new Favorite();
 
-        User user = (User) userRepository.findByEmail(auth.getName())
+        User user = (User) userRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("No existe usuario en BBDD"));
         favorite.setUser(user);
         boolean exiteFavorito = favorite.getUser().getFavoritos()
@@ -82,7 +82,7 @@ public class FavoriteService {
 
     public void eliminarFavorito(Long plantaId) throws ResourceNotFoundException {
         Authentication auth = getAuth();
-        User user = (User) userRepository.findByEmail(auth.getName())
+        User user = (User) userRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("No existe usuario en BBDD asociado a ese id"));
         Favorite favorito = user.getFavoritos()
                 .stream()

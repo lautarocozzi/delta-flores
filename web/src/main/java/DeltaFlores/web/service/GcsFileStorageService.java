@@ -50,4 +50,18 @@ public class GcsFileStorageService implements FileStorageService {
             throw new RuntimeException("Error uploading file to GCS", e);
         }
     }
+
+    @Override
+    public void deleteFile(String fileUrl) {
+        try {
+            String objectName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            BlobId blobId = BlobId.of(bucketName, objectName);
+            boolean deleted = storage.delete(blobId);
+            if (!deleted) {
+                 System.err.println("File not found in GCS for URL: " + fileUrl);
+            }
+        } catch (Exception e) {
+            System.err.println("Error deleting file from GCS: " + e.getMessage());
+        }
+    }
 }

@@ -1,9 +1,6 @@
 package DeltaFlores.web.entities;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +10,8 @@ import lombok.Setter;
 @DiscriminatorValue("NUTRIENT")
 public class NutrientEvent extends PlantEvent {
 
-    @Enumerated(EnumType.STRING)
-    private TipoNutriente tipoNutriente;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nutriente_id")
+    private Nutriente nutriente;
+
 }

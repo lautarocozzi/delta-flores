@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,32 +24,49 @@ public class Planta {
 
     @NotNull
     private String nombre;
-    private String genetica;
+
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "cepa_id", nullable = false)
+    private Cepa cepa;
+
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Planta.etapa etapa;
+    private NuevaEtapa etapa;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
+
+
 
     @CreationTimestamp
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
     private LocalDate fechaCreacion;
 
+    private int produccion;
+
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
+    private LocalDate fechaFin;
+
+    private String ubicacion;
+
     @ManyToMany (fetch = FetchType.LAZY, cascade = CascadeType.DETACH)
     @JoinTable(name = "plants_has_events",
-            joinColumns = @JoinColumn(name = "plants_id"),
+            joinColumns = @JoinColumn(name = "planta_id"),
             inverseJoinColumns = @JoinColumn(name = "events_id"))
-    private List<PlantEvent> events;
+    private List<PlantEvent> events=new ArrayList<>();
 
-    public enum etapa {
-        GERMINACION,
-        PLANTIN,
-        VEGETACION,
-        FLORACION,
-        COSECHADA
-    }
+//    public enum etapa {
+//        GERMINACION,
+//        PLANTIN,
+//        VEGETACION,
+//        FLORACION,
+//        COSECHADA
+//    }
 
 }
