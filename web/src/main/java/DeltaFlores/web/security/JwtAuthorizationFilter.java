@@ -56,7 +56,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("User '{}' authenticated successfully with role '{}'.", username, role);
+                log.info("\n\n🔒 Acceso autorizado 🔒\n" +
+                         "Usuario: {}\n" +
+                         "Rol: {}", username, role);
             }
         }
 
