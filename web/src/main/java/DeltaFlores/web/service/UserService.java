@@ -56,7 +56,7 @@ public class UserService implements UserDetailsService {
     @Transactional(readOnly = true)
     public List<UserDto> getUsersByNombre(String nombre) {
         log.info("\n\n\uD83D\uDD0D Buscando usuarios por nombre: {}", nombre);
-        List<User> users = userRepository.findByNombre(nombre);
+        List<User> users = userRepository.findByNombreContainingIgnoreCase(nombre);
         log.info("\n\n\u2728 {} usuarios encontrados con nombre '{}'.", users.size(), nombre);
         return users.stream()
                 .map(DtoMapper::userToUserDto)
