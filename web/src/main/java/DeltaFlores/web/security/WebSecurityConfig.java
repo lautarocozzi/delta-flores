@@ -51,8 +51,8 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/swagger-" +
                                 "ui/**", "/v3/api-docs/**", "/register").permitAll() // Allow registration
-                        // .anyRequest().authenticated())
-                        .anyRequest().permitAll())
+                        .anyRequest().authenticated())
+                        //.anyRequest().permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/api/logout")
                         .deleteCookies("jwt")

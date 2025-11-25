@@ -2,6 +2,7 @@ package DeltaFlores.web.dto;
 
 import DeltaFlores.web.dto.PlantaDto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class UserToRegisterDto {
     private String email;
     private String password;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate registryDate;
     private Set<PlantaDto> plantas = new HashSet<>();
 
