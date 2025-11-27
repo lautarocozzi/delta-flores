@@ -3,15 +3,15 @@ package DeltaFlores.web.service;
 
 import DeltaFlores.web.dto.UserDto;
 import DeltaFlores.web.dto.UserToRegisterDto;
+import DeltaFlores.web.entities.AppRole;
 import DeltaFlores.web.entities.User;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.utils.DtoMapper;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -103,6 +102,22 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
+    public UserDto updateUserRole(Long id, @NotNull(message = "El rol no puede ser nulo.") AppRole newRole) {
+        log.info("\n\n\uD83D\uDD11 Actualizando rol para el usuario con ID: {}", id);
+        User userToUpdate = userRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("\n\n\u26A0\uFE0F Usuario no encontrado con ID: {} para actualizar rol.", id);
+                    return new ResourceNotFoundException("Usuario no encontrado con id: " + id);
+                });
+
+        userToUpdate.setRol(newRole);
+        User updatedUser = userRepository.save(userToUpdate);
+
+        log.info("\n\n\u2728 Rol del usuario con ID: {} actualizado a {}.", updatedUser.getId(), newRole);
+        return DtoMapper.userToUserDto(updatedUser);
+    }
+
+    @Transactional
     public void deleteUser(Long id) {
         log.info("\n\n\uD83D\uDDD1\uFE0F Eliminando usuario con ID: {}", id);
         if (!userRepository.existsById(id)) {
@@ -118,7 +133,11 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority(user.getRol().name())));
+        return new DeltaFlores.web.security.CustomUserDetails(
+                user.getId(),
+                user.getUsername(),
+                user.getPassword(),
+                user.getAuthorities()
+        );
     }
 }

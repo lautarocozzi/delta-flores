@@ -8,15 +8,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
 import java.io.IOException;
-import java.util.List;
 
 @Log4j2
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
@@ -48,17 +45,32 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Extract claims
             String role = jwtUtils.extractClaim(token, claims -> claims.get("user_role", String.class));
-            User userDetails = new User(username, "", AuthorityUtils.createAuthorityList(role));
+            Number userIdNumber = jwtUtils.extractClaim(token, claims -> claims.get("user_id", Number.class));
+            Long userId = (userIdNumber != null) ? userIdNumber.longValue() : null;
 
-            if (jwtUtils.validateToken(token, userDetails)) {
-                List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(role);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("\n\n🔒 Acceso autorizado 🔒\n" +
-                         "Usuario: {}\n" +
-                         "Rol: {}", username, role);
+            if (userId != null && role != null) {
+                // Create CustomUserDetails to serve as the principal
+                CustomUserDetails principal = new CustomUserDetails(
+                        userId,
+                        username,
+                        "", // Password is not needed for the principal in this context
+                        AuthorityUtils.createAuthorityList(role)
+                );
+
+                if (jwtUtils.validateToken(token, principal)) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            principal, null, principal.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    log.info("\n" +
+                            "---------------------------------------------------------------------------------------------------------" +
+                            "\n🔒 Acceso autorizado 🔒\n" +
+                             "Usuario: {}\n" +
+                             "ID: {}\n" +
+                             "Rol: {}", principal.getUsername(), principal.getId(), role);
+                }
             }
         }
 

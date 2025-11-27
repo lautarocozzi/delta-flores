@@ -24,9 +24,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(
-        prePostEnabled = false, securedEnabled = false, jsr250Enabled = true
-)
+@EnableMethodSecurity(prePostEnabled = true)
 @Log4j2
 public class WebSecurityConfig {
 
@@ -49,8 +47,8 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/swagger-" +
-                                "ui/**", "/v3/api-docs/**", "/register").permitAll() // Allow registration
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/login", "/swagger-ui/**", "/v3/api-docs/**", "/api/users/register").permitAll() // Allow registration
                         .anyRequest().authenticated())
                         //.anyRequest().permitAll())
                 .logout(logout -> logout
@@ -76,7 +74,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173")); // O la URL de tu frontend
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

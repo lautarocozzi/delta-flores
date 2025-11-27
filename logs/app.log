@@ -1,0 +1,360 @@
+2025-11-27 18:24:53.225 INFO  [background-preinit] Version:21 - HV000001: Hibernate Validator 8.0.3.Final
+2025-11-27 18:24:53.272 INFO  [main] WebApplication:53 - Starting WebApplication using Java 21.0.7 with PID 6860 (C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA\web\target\classes started by KozziX PC in C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA)
+2025-11-27 18:24:53.277 INFO  [main] WebApplication:658 - The following 1 profile is active: "minio"
+2025-11-27 18:24:56.934 INFO  [main] Http11NioProtocol:168 - Initializing ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:24:56.937 INFO  [main] StandardService:168 - Starting service [Tomcat]
+2025-11-27 18:24:56.938 INFO  [main] StandardEngine:168 - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-11-27 18:24:57.059 INFO  [main] [/]:168 - Initializing Spring embedded WebApplicationContext
+2025-11-27 18:24:57.502 INFO  [main] LogHelper:31 - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-27 18:24:57.610 INFO  [main] Version:44 - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-11-27 18:24:57.667 INFO  [main] RegionFactoryInitiator:50 - HHH000026: Second-level cache disabled
+2025-11-27 18:24:58.088 INFO  [main] HikariDataSource:109 - HikariPool-1 - Starting...
+2025-11-27 18:24:59.162 INFO  [main] HikariPool:580 - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6fe9c048
+2025-11-27 18:24:59.163 INFO  [main] HikariDataSource:122 - HikariPool-1 - Start completed.
+2025-11-27 18:24:59.446 INFO  [main] pooling:163 - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 13.22
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-11-27 18:25:00.804 INFO  [main] JtaPlatformInitiator:59 - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-27 18:25:05.724 INFO  [main] WebSecurityConfig:41 - Configuring Security Filter Chain...
+2025-11-27 18:25:06.117 WARN  [main] DefaultCredentialsProvider:118 - No core credentials are set. Service-specific credentials (e.g., spring.cloud.gcp.pubsub.credentials.*) should be used if your app uses services that require credentials.
+java.io.IOException: Your default credentials were not found. To set up Application Default Credentials for your environment, see https://cloud.google.com/docs/authentication/external/set-up-adc.
+	at com.google.auth.oauth2.DefaultCredentialsProvider.getDefaultCredentials(DefaultCredentialsProvider.java:127) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:152) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:124) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.api.gax.core.GoogleCredentialsProvider.getCredentials(GoogleCredentialsProvider.java:70) ~[gax-2.47.0.jar:2.47.0]
+	at com.google.cloud.spring.core.DefaultCredentialsProvider.<init>(DefaultCredentialsProvider.java:101) ~[spring-cloud-gcp-core-5.2.1.jar:5.2.1]
+	at com.google.cloud.spring.autoconfigure.core.GcpContextAutoConfiguration.googleCredentials(GcpContextAutoConfiguration.java:56) ~[spring-cloud-gcp-autoconfigure-5.2.1.jar:5.2.1]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:172) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiateWithFactoryMethod(SimpleInstantiationStrategy.java:89) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:169) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:489) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1375) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1205) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1221) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1187) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1123) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) [spring-boot-3.5.6.jar:3.5.6]
+	at DeltaFlores.web.WebApplication.main(WebApplication.java:21) [classes/:?]
+2025-11-27 18:25:06.143 INFO  [main] GcpContextAutoConfiguration:74 - The default project ID is null
+2025-11-27 18:25:06.523 INFO  [main] Http11NioProtocol:168 - Starting ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:25:06.564 INFO  [main] WebApplication:59 - Started WebApplication in 13.731 seconds (process running for 15.914)
+2025-11-27 18:25:06.720 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-11-27 18:25:06.720 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-11-27 18:25:24.038 INFO  [http-nio-8080-exec-1] [/]:168 - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-27 18:25:24.130 INFO  [http-nio-8080-exec-1] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:26:28.884 INFO  [http-nio-8080-exec-3] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:26:36.218 INFO  [http-nio-8080-exec-4] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:26:52.648 INFO  [http-nio-8080-exec-5] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:26:52.650 INFO  [http-nio-8080-exec-5] UserController:46 - 
+
+[Capa Controller] 🔍 Solicitud para obtener todos los usuarios.
+2025-11-27 18:26:53.130 INFO  [http-nio-8080-exec-5] UserService:37 - 
+
+🔍 Listando todos los usuarios...
+2025-11-27 18:26:53.393 INFO  [http-nio-8080-exec-5] UserController:49 - 
+
+[Capa Controller] ✅ 3 usuarios obtenidos con éxito.
+2025-11-27 18:27:04.040 INFO  [http-nio-8080-exec-6] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:27:04.043 INFO  [http-nio-8080-exec-6] UserController:60 - 
+
+[Capa Controller] 🔍 Solicitud para obtener usuario con ID: 3
+2025-11-27 18:27:04.104 INFO  [http-nio-8080-exec-6] UserService:45 - 
+
+🔍 Buscando usuario con ID: 3
+2025-11-27 18:27:04.122 INFO  [http-nio-8080-exec-6] UserService:51 - 
+
+✨ Usuario con ID: 3 encontrado.
+2025-11-27 18:27:04.129 INFO  [http-nio-8080-exec-6] UserController:63 - 
+
+[Capa Controller] ✅ Usuario con ID: 3 obtenido con éxito.
+2025-11-27 18:27:07.859 INFO  [http-nio-8080-exec-7] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:27:07.861 INFO  [http-nio-8080-exec-7] UserController:60 - 
+
+[Capa Controller] 🔍 Solicitud para obtener usuario con ID: 1
+2025-11-27 18:27:07.869 INFO  [http-nio-8080-exec-7] UserService:45 - 
+
+🔍 Buscando usuario con ID: 1
+2025-11-27 18:27:07.878 INFO  [http-nio-8080-exec-7] UserService:51 - 
+
+✨ Usuario con ID: 1 encontrado.
+2025-11-27 18:27:07.884 INFO  [http-nio-8080-exec-7] UserController:63 - 
+
+[Capa Controller] ✅ Usuario con ID: 1 obtenido con éxito.
+2025-11-27 18:27:12.038 INFO  [http-nio-8080-exec-8] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:29:58.389 INFO  [http-nio-8080-exec-1] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: nahue@gmail.com
+ID: 3
+Rol: ROLE_SUPER_ADMIN
+2025-11-27 18:29:58.393 WARN  [http-nio-8080-exec-1] GlobalExceptionHandler:40 - 
+
+❌Intento de acceso denegado para el usuario 'nahue@gmail.com' a la URI: uri=/api/users/3
+
+
+2025-11-27 18:30:40.895 INFO  [SpringApplicationShutdownHook] HikariDataSource:349 - HikariPool-1 - Shutdown initiated...
+2025-11-27 18:30:40.898 INFO  [SpringApplicationShutdownHook] HikariDataSource:351 - HikariPool-1 - Shutdown completed.
+2025-11-27 18:30:45.327 INFO  [background-preinit] Version:21 - HV000001: Hibernate Validator 8.0.3.Final
+2025-11-27 18:30:45.367 INFO  [main] WebApplication:53 - Starting WebApplication using Java 21.0.7 with PID 5136 (C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA\web\target\classes started by KozziX PC in C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA)
+2025-11-27 18:30:45.372 INFO  [main] WebApplication:658 - The following 1 profile is active: "minio"
+2025-11-27 18:30:47.540 INFO  [main] Http11NioProtocol:168 - Initializing ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:30:47.542 INFO  [main] StandardService:168 - Starting service [Tomcat]
+2025-11-27 18:30:47.543 INFO  [main] StandardEngine:168 - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-11-27 18:30:47.634 INFO  [main] [/]:168 - Initializing Spring embedded WebApplicationContext
+2025-11-27 18:30:47.939 INFO  [main] LogHelper:31 - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-27 18:30:47.997 INFO  [main] Version:44 - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-11-27 18:30:48.036 INFO  [main] RegionFactoryInitiator:50 - HHH000026: Second-level cache disabled
+2025-11-27 18:30:48.352 INFO  [main] HikariDataSource:109 - HikariPool-1 - Starting...
+2025-11-27 18:30:48.769 INFO  [main] HikariPool:580 - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1c5fd813
+2025-11-27 18:30:48.770 INFO  [main] HikariDataSource:122 - HikariPool-1 - Start completed.
+2025-11-27 18:30:49.009 INFO  [main] pooling:163 - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 13.22
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-11-27 18:30:49.962 INFO  [main] JtaPlatformInitiator:59 - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-27 18:30:53.723 INFO  [main] WebSecurityConfig:41 - Configuring Security Filter Chain...
+2025-11-27 18:30:53.986 WARN  [main] DefaultCredentialsProvider:118 - No core credentials are set. Service-specific credentials (e.g., spring.cloud.gcp.pubsub.credentials.*) should be used if your app uses services that require credentials.
+java.io.IOException: Your default credentials were not found. To set up Application Default Credentials for your environment, see https://cloud.google.com/docs/authentication/external/set-up-adc.
+	at com.google.auth.oauth2.DefaultCredentialsProvider.getDefaultCredentials(DefaultCredentialsProvider.java:127) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:152) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:124) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.api.gax.core.GoogleCredentialsProvider.getCredentials(GoogleCredentialsProvider.java:70) ~[gax-2.47.0.jar:2.47.0]
+	at com.google.cloud.spring.core.DefaultCredentialsProvider.<init>(DefaultCredentialsProvider.java:101) ~[spring-cloud-gcp-core-5.2.1.jar:5.2.1]
+	at com.google.cloud.spring.autoconfigure.core.GcpContextAutoConfiguration.googleCredentials(GcpContextAutoConfiguration.java:56) ~[spring-cloud-gcp-autoconfigure-5.2.1.jar:5.2.1]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:172) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiateWithFactoryMethod(SimpleInstantiationStrategy.java:89) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:169) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:489) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1375) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1205) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1221) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1187) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1123) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) [spring-boot-3.5.6.jar:3.5.6]
+	at DeltaFlores.web.WebApplication.main(WebApplication.java:21) [classes/:?]
+2025-11-27 18:30:54.002 INFO  [main] GcpContextAutoConfiguration:74 - The default project ID is null
+2025-11-27 18:30:54.232 INFO  [main] Http11NioProtocol:168 - Starting ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:30:54.262 INFO  [main] WebApplication:59 - Started WebApplication in 9.265 seconds (process running for 10.22)
+2025-11-27 18:30:54.330 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-11-27 18:30:54.330 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-11-27 18:30:56.962 INFO  [http-nio-8080-exec-1] [/]:168 - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-27 18:30:57.058 INFO  [http-nio-8080-exec-1] JwtAuthorizationFilter:67 - 🔒 Acceso autorizado 🔒
+Usuario: nahue@gmail.com
+ID: 3
+Rol: ROLE_SUPER_ADMIN
+2025-11-27 18:30:57.087 INFO  [http-nio-8080-exec-1] UserController:125 - 
+
+[Capa Controller] 🗑️ Solicitud para eliminar usuario con ID: 3
+2025-11-27 18:30:57.100 INFO  [http-nio-8080-exec-1] UserService:122 - 
+
+🗑️ Eliminando usuario con ID: 3
+2025-11-27 18:30:57.336 INFO  [http-nio-8080-exec-1] UserService:128 - 
+
+✨ Usuario con ID: 3 eliminado con éxito.
+2025-11-27 18:30:57.374 INFO  [http-nio-8080-exec-1] UserController:128 - 
+
+[Capa Controller] ✅ Usuario con ID: 3 eliminado con éxito.
+2025-11-27 18:32:19.602 INFO  [SpringApplicationShutdownHook] HikariDataSource:349 - HikariPool-1 - Shutdown initiated...
+2025-11-27 18:32:19.605 INFO  [SpringApplicationShutdownHook] HikariDataSource:351 - HikariPool-1 - Shutdown completed.
+2025-11-27 18:32:23.679 INFO  [background-preinit] Version:21 - HV000001: Hibernate Validator 8.0.3.Final
+2025-11-27 18:32:23.717 INFO  [main] WebApplication:53 - Starting WebApplication using Java 21.0.7 with PID 14836 (C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA\web\target\classes started by KozziX PC in C:\Users\KozziX PC\OneDrive\Escritorio\Gemini\FloresDelta\FLORESDELTA)
+2025-11-27 18:32:23.721 INFO  [main] WebApplication:658 - The following 1 profile is active: "minio"
+2025-11-27 18:32:25.787 INFO  [main] Http11NioProtocol:168 - Initializing ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:32:25.790 INFO  [main] StandardService:168 - Starting service [Tomcat]
+2025-11-27 18:32:25.791 INFO  [main] StandardEngine:168 - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-11-27 18:32:25.893 INFO  [main] [/]:168 - Initializing Spring embedded WebApplicationContext
+2025-11-27 18:32:26.257 INFO  [main] LogHelper:31 - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-11-27 18:32:26.332 INFO  [main] Version:44 - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-11-27 18:32:26.365 INFO  [main] RegionFactoryInitiator:50 - HHH000026: Second-level cache disabled
+2025-11-27 18:32:26.671 INFO  [main] HikariDataSource:109 - HikariPool-1 - Starting...
+2025-11-27 18:32:27.096 INFO  [main] HikariPool:580 - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5c34b0f2
+2025-11-27 18:32:27.097 INFO  [main] HikariDataSource:122 - HikariPool-1 - Start completed.
+2025-11-27 18:32:27.343 INFO  [main] pooling:163 - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 13.22
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-11-27 18:32:28.273 INFO  [main] JtaPlatformInitiator:59 - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-11-27 18:32:32.899 INFO  [main] WebSecurityConfig:41 - Configuring Security Filter Chain...
+2025-11-27 18:32:33.177 WARN  [main] DefaultCredentialsProvider:118 - No core credentials are set. Service-specific credentials (e.g., spring.cloud.gcp.pubsub.credentials.*) should be used if your app uses services that require credentials.
+java.io.IOException: Your default credentials were not found. To set up Application Default Credentials for your environment, see https://cloud.google.com/docs/authentication/external/set-up-adc.
+	at com.google.auth.oauth2.DefaultCredentialsProvider.getDefaultCredentials(DefaultCredentialsProvider.java:127) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:152) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.auth.oauth2.GoogleCredentials.getApplicationDefault(GoogleCredentials.java:124) ~[google-auth-library-oauth2-http-1.23.0.jar:1.23.0]
+	at com.google.api.gax.core.GoogleCredentialsProvider.getCredentials(GoogleCredentialsProvider.java:70) ~[gax-2.47.0.jar:2.47.0]
+	at com.google.cloud.spring.core.DefaultCredentialsProvider.<init>(DefaultCredentialsProvider.java:101) ~[spring-cloud-gcp-core-5.2.1.jar:5.2.1]
+	at com.google.cloud.spring.autoconfigure.core.GcpContextAutoConfiguration.googleCredentials(GcpContextAutoConfiguration.java:56) ~[spring-cloud-gcp-autoconfigure-5.2.1.jar:5.2.1]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:172) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiateWithFactoryMethod(SimpleInstantiationStrategy.java:89) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:169) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:653) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:489) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1375) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1205) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.instantiateSingleton(DefaultListableBeanFactory.java:1221) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingleton(DefaultListableBeanFactory.java:1187) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:1123) [spring-beans-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:987) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627) [spring-context-6.2.11.jar:6.2.11]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) [spring-boot-3.5.6.jar:3.5.6]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) [spring-boot-3.5.6.jar:3.5.6]
+	at DeltaFlores.web.WebApplication.main(WebApplication.java:21) [classes/:?]
+2025-11-27 18:32:33.193 INFO  [main] GcpContextAutoConfiguration:74 - The default project ID is null
+2025-11-27 18:32:33.469 INFO  [main] Http11NioProtocol:168 - Starting ProtocolHandler ["http-nio-8080"]
+2025-11-27 18:32:33.505 INFO  [main] WebApplication:59 - Started WebApplication in 10.154 seconds (process running for 11.044)
+2025-11-27 18:32:33.581 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2025-11-27 18:32:33.582 WARN  [main] SpringDocAppInitializer:73 - SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+2025-11-27 18:32:50.216 INFO  [http-nio-8080-exec-1] [/]:168 - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-11-27 18:32:50.313 INFO  [http-nio-8080-exec-1] JwtAuthorizationFilter:67 - 
+---------------------------------------------------------------------------------------------------------
+🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:32:50.339 INFO  [http-nio-8080-exec-1] UserController:46 - 
+
+[Capa Controller] 🔍 Solicitud para obtener todos los usuarios.
+2025-11-27 18:32:50.367 INFO  [http-nio-8080-exec-1] UserService:37 - 
+
+🔍 Listando todos los usuarios...
+2025-11-27 18:32:50.629 INFO  [http-nio-8080-exec-1] UserController:49 - 
+
+[Capa Controller] ✅ 2 usuarios obtenidos con éxito.
+2025-11-27 18:33:33.815 INFO  [http-nio-8080-exec-2] UserController:29 - 
+
+[Capa Controller] 💾 Solicitud de registro para nuevo usuario: nahue@gmail.com
+2025-11-27 18:33:33.829 INFO  [http-nio-8080-exec-2] UserService:67 - 
+
+💾 Registrando nuevo usuario: nahue@gmail.com
+2025-11-27 18:33:34.154 INFO  [http-nio-8080-exec-2] UserService:81 - 
+
+✨ Usuario registrado con éxito con ID: 4
+2025-11-27 18:33:34.173 INFO  [http-nio-8080-exec-2] UserController:32 - 
+
+[Capa Controller] ✅ Usuario nahue@gmail.com registrado con éxito con ID: 4
+2025-11-27 18:33:48.431 INFO  [http-nio-8080-exec-3] JwtAuthorizationFilter:67 - 
+---------------------------------------------------------------------------------------------------------
+🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:33:48.432 INFO  [http-nio-8080-exec-3] UserController:46 - 
+
+[Capa Controller] 🔍 Solicitud para obtener todos los usuarios.
+2025-11-27 18:33:48.450 INFO  [http-nio-8080-exec-3] UserService:37 - 
+
+🔍 Listando todos los usuarios...
+2025-11-27 18:33:48.497 INFO  [http-nio-8080-exec-3] UserController:49 - 
+
+[Capa Controller] ✅ 3 usuarios obtenidos con éxito.
+2025-11-27 18:33:58.293 INFO  [http-nio-8080-exec-4] JwtAuthorizationFilter:67 - 
+---------------------------------------------------------------------------------------------------------
+🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:33:58.298 INFO  [http-nio-8080-exec-4] UserController:77 - 
+
+[Capa Controller] 🔍 Solicitud para obtener usuarios por nombre: a
+2025-11-27 18:33:58.348 INFO  [http-nio-8080-exec-4] UserService:57 - 
+
+🔍 Buscando usuarios por nombre: a
+2025-11-27 18:33:58.389 INFO  [http-nio-8080-exec-4] UserService:59 - 
+
+✨ 3 usuarios encontrados con nombre 'a'.
+2025-11-27 18:33:58.397 INFO  [http-nio-8080-exec-4] UserController:80 - 
+
+[Capa Controller] ✅ 3 usuarios obtenidos por nombre 'a'.
+2025-11-27 18:34:02.223 INFO  [http-nio-8080-exec-5] JwtAuthorizationFilter:67 - 
+---------------------------------------------------------------------------------------------------------
+🔒 Acceso autorizado 🔒
+Usuario: lauti.s2s2@gmail.com
+ID: 1
+Rol: ROLE_ADMIN
+2025-11-27 18:34:02.225 INFO  [http-nio-8080-exec-5] UserController:77 - 
+
+[Capa Controller] 🔍 Solicitud para obtener usuarios por nombre: aaa
+2025-11-27 18:34:02.307 INFO  [http-nio-8080-exec-5] UserService:57 - 
+
+🔍 Buscando usuarios por nombre: aaa
+2025-11-27 18:34:02.319 INFO  [http-nio-8080-exec-5] UserService:59 - 
+
+✨ 0 usuarios encontrados con nombre 'aaa'.
+2025-11-27 18:34:02.327 INFO  [http-nio-8080-exec-5] UserController:80 - 
+
+[Capa Controller] ✅ 0 usuarios obtenidos por nombre 'aaa'.

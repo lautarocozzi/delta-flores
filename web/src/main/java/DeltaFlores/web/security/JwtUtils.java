@@ -1,5 +1,6 @@
 package DeltaFlores.web.security;
 
+import DeltaFlores.web.entities.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -51,6 +52,12 @@ public class JwtUtils {
             String role = userDetails.getAuthorities().iterator().next().getAuthority();
             claims.put("user_role", role);
         }
+
+        // Add user ID to claims if it's our CustomUserDetails
+        if (userDetails instanceof CustomUserDetails) {
+            claims.put("user_id", ((CustomUserDetails) userDetails).getId());
+        }
+
         return createToken(claims, userDetails.getUsername());
     }
 

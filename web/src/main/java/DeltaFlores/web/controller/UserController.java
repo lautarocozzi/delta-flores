@@ -1,6 +1,7 @@
 package DeltaFlores.web.controller;
 
 
+import DeltaFlores.web.dto.UpdateUserRoleRequestDto;
 import DeltaFlores.web.dto.UserDto;
 import DeltaFlores.web.dto.UserToRegisterDto;
 import DeltaFlores.web.exception.ResourceNotFoundException;
@@ -40,7 +41,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         log.info("\n\n[Capa Controller] \uD83D\uDD0D Solicitud para obtener todos los usuarios.");
         try {
@@ -54,7 +55,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         log.info("\n\n[Capa Controller] \uD83D\uDD0D Solicitud para obtener usuario con ID: {}", id);
         try {
@@ -71,7 +72,7 @@ public class UserController {
     }
 
     @GetMapping("/nombre/{nombre}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<UserDto>> getUsersByNombre(@PathVariable String nombre) {
         log.info("\n\n[Capa Controller] \uD83D\uDD0D Solicitud para obtener usuarios por nombre: {}", nombre);
         try {
@@ -85,7 +86,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or #id == principal.id")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
         log.info("\n\n[Capa Controller] \u2B06\uFE0F Solicitud para actualizar usuario con ID: {}", id);
         try {
@@ -101,8 +102,25 @@ public class UserController {
         }
     }
 
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<UserDto> updateUserRole(@PathVariable Long id, @RequestBody @Valid UpdateUserRoleRequestDto roleRequest) {
+        log.info("\n\n[Capa Controller] \uD83D\uDD11 Solicitud para cambiar rol del usuario con ID: {}", id);
+        try {
+            UserDto updatedUser = userService.updateUserRole(id, roleRequest.getRole());
+            log.info("\n\n[Capa Controller] \u2705 Rol del usuario con ID: {} actualizado con éxito a {}.", id, roleRequest.getRole());
+            return ResponseEntity.ok(updatedUser);
+        } catch (ResourceNotFoundException e) {
+            log.warn("\n\n[Capa Controller] \u26A0\uFE0F Usuario con ID: {} no encontrado para cambiar rol.", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            log.error("\n\n[Capa Controller] \u274C Error al cambiar rol para usuario con ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         log.info("\n\n[Capa Controller] \uD83D\uDDD1\uFE0F Solicitud para eliminar usuario con ID: {}", id);
         try {

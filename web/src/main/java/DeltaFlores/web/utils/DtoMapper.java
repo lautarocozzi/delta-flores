@@ -39,7 +39,6 @@ public final class DtoMapper {
         } catch (IllegalArgumentException ex) {
             throw new BadRequestException("Rol inválido");
         }
-        userDto.setFechaRegistro(userToRegisterDto.getRegistryDate());
         return userDto;
     }
 
