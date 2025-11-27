@@ -15,6 +15,8 @@ public interface PlantaRepository extends JpaRepository<Planta, Long> {
     @Query("SELECT p FROM Planta p LEFT JOIN FETCH p.events WHERE p.id = :id")
     Optional<Planta> findByIdWithEvents(@Param("id") Long id);
 
+    List<Planta> findByUserId(Long userId);
+
     List<Planta> findByNombre(String palabraClave);
 
     List<Planta> findBySalaId(Long salaId);

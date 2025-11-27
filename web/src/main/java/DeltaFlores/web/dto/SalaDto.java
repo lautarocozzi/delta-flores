@@ -1,8 +1,5 @@
 package DeltaFlores.web.dto;
 
-import DeltaFlores.web.entities.Planta;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.OneToMany;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,6 +11,7 @@ public class SalaDto implements Serializable {
     private Long id;
     private String nombre;
     private String descripcion;
+    private Long userId; // ID of the user who owns the sala
 
     private String horasLuz;
     private Double humedad;

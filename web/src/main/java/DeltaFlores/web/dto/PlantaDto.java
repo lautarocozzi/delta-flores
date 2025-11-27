@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 public class PlantaDto implements Serializable {
     private Long id;
+    private Long userId; // ID of the user who owns the plant
     private String nombre;
     private NuevaEtapa etapa;
     private SalaDto sala;

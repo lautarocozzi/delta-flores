@@ -69,6 +69,9 @@ public final class DtoMapper {
         salaDto.setHorasLuz(sala.getHorasLuz());
         salaDto.setHumedad(sala.getHumedad());
         salaDto.setTemperaturaAmbiente(sala.getTemperaturaAmbiente());
+        if (sala.getUser() != null) {
+            salaDto.setUserId(sala.getUser().getId());
+        }
         return salaDto;
     }
 
@@ -94,6 +97,9 @@ public final class DtoMapper {
     public static PlantaDto plantaToPlantaDto(Planta planta) {
         PlantaDto plantaDto = new PlantaDto();
         plantaDto.setId(planta.getId());
+        if (planta.getUser() != null) {
+            plantaDto.setUserId(planta.getUser().getId());
+        }
         plantaDto.setNombre(planta.getNombre());
         plantaDto.setEtapa(planta.getEtapa());
         plantaDto.setUbicacion(planta.getUbicacion());

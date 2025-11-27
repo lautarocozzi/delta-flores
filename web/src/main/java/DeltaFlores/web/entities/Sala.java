@@ -1,5 +1,6 @@
 package DeltaFlores.web.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,10 @@ public class Sala {
             private Double humedad;
             private Double temperaturaAmbiente;
         
+            @ManyToOne(fetch = FetchType.LAZY)
+            @JoinColumn(name = "user_id", nullable = false)
+            @JsonBackReference
+            private User user;
         
             @OneToMany(mappedBy = "sala", cascade = CascadeType.DETACH)
             private Set<Planta> plantas = new HashSet<>();
