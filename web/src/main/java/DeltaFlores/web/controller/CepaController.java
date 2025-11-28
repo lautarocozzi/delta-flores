@@ -6,12 +6,13 @@ import DeltaFlores.web.service.CepaService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/cepas")
+@RequestMapping("/api/cepas")
 @Log4j2
 public class CepaController {
 
@@ -22,10 +23,10 @@ public class CepaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CepaDto>> getAllCepas() {
-        log.info("\n\n[Capa Controller] \uD83D\uDD0E Solicitud para obtener todas las cepas.");
+    public ResponseEntity<List<CepaDto>> getCepasForCurrentUser() {
+        log.info("\n\n[Capa Controller] \uD83D\uDD0E Solicitud para obtener todas las cepas del usuario actual.");
         try {
-            List<CepaDto> cepas = cepaService.getAllCepas();
+            List<CepaDto> cepas = cepaService.getCepasForCurrentUser();
             log.info("\n\n[Capa Controller] \u2705 {} cepas obtenidas con éxito.", cepas.size());
             return ResponseEntity.ok(cepas);
         } catch (Exception e) {
@@ -91,6 +92,20 @@ public class CepaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             log.error("\n\n[Capa Controller] \u274C Error al eliminar cepa con ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    public ResponseEntity<List<CepaDto>> getCepasByUserId(@PathVariable Long userId) {
+        log.info("\n\n[Capa Controller] \uD83D\uDD0E Solicitud de SUPER_ADMIN para obtener todas las cepas del usuario con ID: {}", userId);
+        try {
+            List<CepaDto> cepas = cepaService.getCepasByUserId(userId);
+            log.info("\n\n[Capa Controller] \u2705 {} cepas obtenidas con éxito para el usuario con ID: {}", cepas.size(), userId);
+            return ResponseEntity.ok(cepas);
+        } catch (Exception e) {
+            log.error("\n\n[Capa Controller] \u274C Error al obtener las cepas para el usuario con ID {}: {}", userId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

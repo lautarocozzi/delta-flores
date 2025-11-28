@@ -194,7 +194,44 @@ public class PlantaService {
         
         // If the above check passes, the user is either the owner or an admin, so it's safe to list the plants.
         List<Planta> plantas = plantaRepository.findBySalaId(salaId);
-        log.info("{} plantas encontradas para sala ID: {}.", plantas.size(), salaId);
-        return plantas.stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
-    }
-}
+                
+                log.info("{} plantas encontradas para sala ID: {}.", plantas.size(), salaId);
+                return plantas.stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
+            }
+        
+                @Transactional
+                public PlantaDto transferPlanta(Long plantaId, Long newOwnerId) {
+                    log.info("Iniciando transferencia de la planta ID: {} al nuevo propietario ID: {}", plantaId, newOwnerId);
+                    
+                    Planta planta = plantaRepository.findById(plantaId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Planta a transferir no encontrada con id: " + plantaId));
+            
+                    User newOwner = userRepository.findById(newOwnerId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Usuario destinatario no encontrado con id: " + newOwnerId));
+                        
+                    log.warn("Transferencia de propiedad de la planta '{}' (ID: {}) del usuario '{}' (ID: {}) al usuario '{}' (ID: {})", 
+                        planta.getNombre(), planta.getId(), planta.getUser().getUsername(), planta.getUser().getId(), newOwner.getUsername(), newOwner.getId());
+            
+                    planta.setUser(newOwner);
+                    Planta transferredPlanta = plantaRepository.save(planta);
+                    
+                    return DtoMapper.plantaToPlantaDto(transferredPlanta);
+                }
+            
+                @Transactional
+                public PlantaDto togglePublicStatus(Long plantaId) {
+                    log.info("Cambiando estado de visibilidad para la planta ID: {}", plantaId);
+                    Planta planta = plantaRepository.findById(plantaId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId));
+                    
+                    // Only the owner or an admin can change the public status
+                    checkOwnership(planta);
+            
+                    planta.setPublic(!planta.isPublic());
+                    Planta updatedPlanta = plantaRepository.save(planta);
+            
+                    log.info("El estado de visibilidad para la planta ID: {} ha sido cambiado a: {}", plantaId, updatedPlanta.isPublic());
+                    return DtoMapper.plantaToPlantaDto(updatedPlanta);
+                }
+            }
+            

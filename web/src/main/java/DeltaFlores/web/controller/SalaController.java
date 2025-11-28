@@ -32,6 +32,7 @@ public class SalaController {
             log.error("\n\n[Capa Controller] ❌ Error inesperado al crear sala {}: {}", salaDto.getNombre(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
     }
 
     @GetMapping

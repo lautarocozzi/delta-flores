@@ -21,6 +21,6 @@ public class CepaDto implements Serializable {
     private String thc;
     private String cbd;
     private String detalle;
-    private List<PlantaDto> plantas;
-
+    private Long userId;
+    
 }

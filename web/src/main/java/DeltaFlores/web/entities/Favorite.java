@@ -1,7 +1,5 @@
 package DeltaFlores.web.entities;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,19 +9,26 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "favoritos")
+@Table(name = "favorites", uniqueConstraints = {
+    // A user can only favorite a plant once
+    @UniqueConstraint(columnNames = {"user_id", "planta_id"})
+})
 public class Favorite {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long favorito;
-
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id")
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.DETACH)
-    @JoinColumn(name = "usuarios_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "planta_id", nullable = false)
+    private Planta planta;
+
+    public Favorite(User user, Planta planta) {
+        this.user = user;
+        this.planta = planta;
+    }
 }

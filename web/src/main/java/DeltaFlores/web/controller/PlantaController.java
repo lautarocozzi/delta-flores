@@ -99,6 +99,23 @@ public class PlantaController {
         }
     }
 
+    @PutMapping("/{id}/toggle-public")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<PlantaDto> togglePublicStatus(@PathVariable Long id) {
+        log.info("[Capa Controller] Solicitud para cambiar visibilidad de la planta ID: {}", id);
+        try {
+            PlantaDto updatedPlanta = plantaService.togglePublicStatus(id);
+            log.info("[Capa Controller] Visibilidad de la planta ID: {} cambiada a: {}", id, updatedPlanta.isPublic());
+            return ResponseEntity.ok(updatedPlanta);
+        } catch (ResourceNotFoundException e) {
+            log.warn("[Capa Controller] Planta con ID: {} no encontrada para cambiar visibilidad.", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            log.error("[Capa Controller] Error al cambiar visibilidad de la planta ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<PlantaDto>> searchPlantasByKeyword(@RequestParam String palabraClave) {

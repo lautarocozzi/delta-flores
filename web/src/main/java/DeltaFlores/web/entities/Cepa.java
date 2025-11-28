@@ -26,6 +26,10 @@ public class Cepa {
     @OneToMany(mappedBy = "cepa", fetch = FetchType.LAZY)
     private List<Planta> plantas = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
 
     @Override
     public String toString() {

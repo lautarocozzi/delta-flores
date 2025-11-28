@@ -50,6 +50,10 @@ public class User implements UserDetails {
     @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.DETACH, mappedBy = "user")
     private Set<Favorite> favoritos=new HashSet<>();
 
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cepa> cepas = new ArrayList<>();
+
 
 
 

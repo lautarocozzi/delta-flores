@@ -18,6 +18,7 @@ public class PlantaDto implements Serializable {
     private Long id;
     private Long userId; // ID of the user who owns the plant
     private String nombre;
+    private boolean isPublic;
     private NuevaEtapa etapa;
     private SalaDto sala;
     private int produccion;

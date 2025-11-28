@@ -29,6 +29,9 @@ public class Planta {
     @NotNull
     private String nombre;
 
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic = false;
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cepa_id", nullable = false)

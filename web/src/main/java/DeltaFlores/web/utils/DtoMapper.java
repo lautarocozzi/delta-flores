@@ -101,6 +101,7 @@ public final class DtoMapper {
             plantaDto.setUserId(planta.getUser().getId());
         }
         plantaDto.setNombre(planta.getNombre());
+        plantaDto.setPublic(planta.isPublic());
         plantaDto.setEtapa(planta.getEtapa());
         plantaDto.setUbicacion(planta.getUbicacion());
         plantaDto.setProduccion(planta.getProduccion());
@@ -126,6 +127,7 @@ public final class DtoMapper {
             planta.setId(plantaDto.getId());
         }
         planta.setNombre(plantaDto.getNombre());
+        planta.setPublic(plantaDto.isPublic());
         planta.setEtapa(plantaDto.getEtapa());
         planta.setFechaCreacion(plantaDto.getFechaCreacion());
         if (plantaDto.getSala() != null) {
@@ -161,6 +163,9 @@ public final class DtoMapper {
         cepaDto.setThc(cepa.getThc());
         cepaDto.setCbd(cepa.getCbd());
         cepaDto.setDetalle(cepa.getDetalle());
+        if (cepa.getUser() != null) {
+            cepaDto.setUserId(cepa.getUser().getId());
+        }
         // Avoid circular mapping by not mapping plantas here.
         return cepaDto;
     }
