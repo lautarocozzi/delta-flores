@@ -72,6 +72,11 @@ public final class DtoMapper {
         if (sala.getUser() != null) {
             salaDto.setUserId(sala.getUser().getId());
         }
+        if (sala.getPlantas() != null) {
+            salaDto.setPlantaIds(sala.getPlantas().stream()
+                    .map(Planta::getId)
+                    .collect(Collectors.toSet()));
+        }
         return salaDto;
     }
 
@@ -112,13 +117,7 @@ public final class DtoMapper {
         if (planta.getCepa() != null) {
             plantaDto.setCepaDto(cepaToCepaDto(planta.getCepa()));
         }
-        if (planta.getEvents() != null) {
-            plantaDto.setEvents(planta.getEvents().stream()
-                    .map(DtoMapper::plantEventToPlantEventDto)
-                    .collect(Collectors.toList()));
-        } else {
-            plantaDto.setEvents(Collections.emptyList());
-        }
+
         return plantaDto;
     }
 
@@ -140,13 +139,7 @@ public final class DtoMapper {
             Cepa cepa = planta.getCepa() != null ? planta.getCepa() : new Cepa();
             planta.setCepa(cepaDtoToCepa(plantaDto.getCepaDto(), cepa));
         }
-        if (plantaDto.getEvents() != null) {
-            planta.setEvents(plantaDto.getEvents().stream()
-                    .map(eventDto -> plantEventDtoToPlantEvent(eventDto, new PlantEvent() {}))
-                    .collect(Collectors.toList()));
-        } else {
-            planta.setEvents(Collections.emptyList());
-        }
+
         return planta;
     }
 

@@ -82,6 +82,17 @@ public class PlantaService {
         Cepa cepa = cepaRepository.findById(plantaDto.getCepaDto().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaDto().getId()));
 
+        // Authorization check for Cepa
+        boolean isOwner = cepa.getUser().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN") || role.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            log.warn("ACCESO DENEGADO: El usuario '{}' intentó crear una planta usando la cepa con ID: {}, que no le pertenece.",
+                    currentUser.getUsername(), cepa.getId());
+            throw new AccessDeniedException("No tienes permiso para usar esta cepa. Solo los dueños o administradores pueden hacerlo.");
+        }
+
         Planta planta = new Planta();
         planta.setNombre(plantaDto.getNombre());
         planta.setEtapa(plantaDto.getEtapa());
@@ -218,20 +229,27 @@ public class PlantaService {
                     return DtoMapper.plantaToPlantaDto(transferredPlanta);
                 }
             
-                @Transactional
-                public PlantaDto togglePublicStatus(Long plantaId) {
-                    log.info("Cambiando estado de visibilidad para la planta ID: {}", plantaId);
-                    Planta planta = plantaRepository.findById(plantaId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId));
-                    
-                    // Only the owner or an admin can change the public status
-                    checkOwnership(planta);
-            
-                    planta.setPublic(!planta.isPublic());
-                    Planta updatedPlanta = plantaRepository.save(planta);
-            
-                    log.info("El estado de visibilidad para la planta ID: {} ha sido cambiado a: {}", plantaId, updatedPlanta.isPublic());
-                    return DtoMapper.plantaToPlantaDto(updatedPlanta);
-                }
-            }
-            
+                    @Transactional
+                    public PlantaDto togglePublicStatus(Long plantaId) {
+                        log.info("Cambiando estado de visibilidad para la planta ID: {}", plantaId);
+                        Planta planta = plantaRepository.findById(plantaId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId));
+                
+                        // Only the owner or an admin can change the public status
+                        checkOwnership(planta);
+                
+                        planta.setPublic(!planta.isPublic());
+                        Planta updatedPlanta = plantaRepository.save(planta);
+                
+                        log.info("El estado de visibilidad para la planta ID: {} ha sido cambiado a: {}", plantaId, updatedPlanta.isPublic());
+                        return DtoMapper.plantaToPlantaDto(updatedPlanta);
+                    }
+                
+                    @Transactional(readOnly = true)
+                    public List<PlantaDto> getPlantasByUserId(Long userId) {
+                        log.info("Buscando todas las plantas para el usuario con ID: {}", userId);
+                        List<Planta> plantas = plantaRepository.findByUserId(userId);
+                        log.info("{} plantas encontradas para el usuario con ID: {}", plantas.size(), userId);
+                        return plantas.stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
+                    }
+                }            

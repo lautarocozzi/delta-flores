@@ -2,6 +2,7 @@ package DeltaFlores.web.controller;
 
 import DeltaFlores.web.service.LogService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/logs")
 @RequiredArgsConstructor
+@Log4j2
 public class LogController {
 
     private final LogService logService;
@@ -28,7 +30,7 @@ public class LogController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<String>> getLogs(
             @RequestParam(defaultValue = "500") int lines) {
-        
+        log.info("\n\n[Capa Controller] 📖 Solicitud para listar LOGS.");
         List<String> logs = logService.getLatestLogs(lines);
         return ResponseEntity.ok(logs);
     }

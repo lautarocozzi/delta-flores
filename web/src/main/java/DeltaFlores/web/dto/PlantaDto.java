@@ -24,7 +24,7 @@ public class PlantaDto implements Serializable {
     private int produccion;
     private LocalDate fechaCreacion;
     private LocalDate fechaFin;
-    private List<PlantEventDto> events;
+    private List<Long> eventIds;
     private CepaDto cepaDto;
     private String ubicacion;
 }

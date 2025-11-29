@@ -17,7 +17,7 @@ public class SalaDto implements Serializable {
     private Double humedad;
     private Double temperaturaAmbiente;
 
-    private Set<PlantaDto> plantas = new HashSet<>();
+    private Set<Long> plantaIds = new HashSet<>();
 
 
 }
