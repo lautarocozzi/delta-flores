@@ -8,11 +8,17 @@ import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.MeasurementEventRepository;
 import DeltaFlores.web.repository.PlantaRepository;
 import DeltaFlores.web.repository.SalaRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +32,14 @@ public class MeasurementEventService {
     private final MeasurementEventRepository measurementEventRepository;
     private final PlantaRepository plantaRepository;
     private final SalaRepository salaRepository; // Inyectar SalaRepository
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public MeasurementEventDto createMeasurementEvent(MeasurementEventDto dto) {
@@ -112,8 +126,17 @@ public class MeasurementEventService {
     @Transactional
     public MeasurementEventDto updateMeasurementEvent(Long id, MeasurementEventDto dto) {
         log.info("\n\n\u2b06\ufe0f Actualizando evento de medición con ID: {}", id);
+        User currentUser = getCurrentUser();
         MeasurementEvent existingEvent = measurementEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de medición no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setHorasLuz(dto.getHorasLuz());
@@ -139,9 +162,18 @@ public class MeasurementEventService {
     @Transactional
     public void deleteMeasurementEvent(Long id) {
         log.info("\n\n\ud83d\udd31\ufe0f Eliminando evento de medición con ID: {}", id);
-        if (!measurementEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de medición no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        MeasurementEvent event = measurementEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de medición no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : event.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+        
         measurementEventRepository.deleteById(id);
         log.info("\n\n\u2728 Evento de medición con ID: {} eliminado.", id);
     }

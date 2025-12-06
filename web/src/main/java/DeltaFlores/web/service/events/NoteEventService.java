@@ -6,13 +6,19 @@ import DeltaFlores.web.entities.Planta;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.NoteEventRepository;
 import DeltaFlores.web.repository.PlantaRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.service.MinioFileStorageService;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,6 +33,14 @@ public class NoteEventService {
     private final NoteEventRepository noteEventRepository;
     private final PlantaRepository plantaRepository;
     private final MinioFileStorageService fileStorageService;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public NoteEventDto createNoteEvent(NoteEventDto dto, List<MultipartFile> files) {
@@ -106,8 +120,17 @@ public class NoteEventService {
     @Transactional
     public NoteEventDto updateNoteEvent(Long id, NoteEventDto dto, List<MultipartFile> newFiles) {
         log.info("\n\n⬆️ Actualizando evento de nota con ID: {}", id);
+        User currentUser = getCurrentUser();
         NoteEvent existingEvent = noteEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de nota no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setText(dto.getText());
@@ -143,11 +166,19 @@ public class NoteEventService {
     @Transactional
     public void deleteNoteEvent(Long id) {
         log.info("\n\n🗑️ Eliminando evento de nota con ID: {}", id);
-        if (!noteEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de nota no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        NoteEvent eventToDelete = noteEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de nota no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : eventToDelete.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+
         // Optional: Delete associated files from storage
-        NoteEvent eventToDelete = noteEventRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Evento de nota no encontrado con id: " + id));
         if (eventToDelete.getMediaUrls() != null) {
             for (String url : eventToDelete.getMediaUrls()) {
                 fileStorageService.deleteFile(url);

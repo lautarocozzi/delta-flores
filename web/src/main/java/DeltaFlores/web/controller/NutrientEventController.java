@@ -23,7 +23,7 @@ public class NutrientEventController {
     private final NutrientEventService nutrientEventService;
 
     @PostMapping
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<NutrientEventDto> createNutrientEvent(@RequestBody NutrientEventDto nutrientEventDto) {
         log.info("\n\n[Capa Controller] 🌱 Solicitud para crear evento de nutriente.");
         try {
@@ -37,7 +37,7 @@ public class NutrientEventController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<NutrientEventDto> getNutrientEventById(@PathVariable Long id) {
         log.info("\n\n[Capa Controller] 🔎 Solicitud para obtener evento de nutriente con ID: {}", id);
         try {
@@ -54,7 +54,7 @@ public class NutrientEventController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<NutrientEventDto>> getAllNutrientEvents() {
         log.info("\n\n[Capa Controller] 🔎 Solicitud para obtener todos los eventos de nutriente.");
         try {
@@ -68,7 +68,7 @@ public class NutrientEventController {
     }
 
     @GetMapping("/planta/{plantaId}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<NutrientEventDto>> getNutrientEventsByPlantaId(@PathVariable Long plantaId) {
         log.info("\n\n[Capa Controller] 🔎 Solicitud para obtener eventos de nutriente por ID de planta: {}", plantaId);
         try {
@@ -82,7 +82,7 @@ public class NutrientEventController {
     }
 
     @GetMapping("/by-date/{fecha}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<NutrientEventDto>> getNutrientEventsByFecha(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         log.info("\n\n[Capa Controller] 🔎 Solicitud para obtener eventos de nutriente para la fecha: {}", fecha);
@@ -97,7 +97,7 @@ public class NutrientEventController {
     }
 
     @GetMapping("/by-date-after/{fecha}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<NutrientEventDto>> getNutrientEventsByFechaAfter(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         log.info("\n\n[Capa Controller] 🔎 Solicitud para obtener eventos de nutriente posteriores a la fecha: {}", fecha);
@@ -112,7 +112,7 @@ public class NutrientEventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<NutrientEventDto> updateNutrientEvent(@PathVariable Long id, @RequestBody NutrientEventDto nutrientEventDto) {
         log.info("\n\n[Capa Controller] ⬆️ Solicitud para actualizar evento de nutriente con ID: {}", id);
         try {
@@ -129,7 +129,7 @@ public class NutrientEventController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('GROWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Void> deleteNutrientEvent(@PathVariable Long id) {
         log.info("\n\n[Capa Controller] 🗑️ Solicitud para eliminar evento de nutriente con ID: {}", id);
         try {

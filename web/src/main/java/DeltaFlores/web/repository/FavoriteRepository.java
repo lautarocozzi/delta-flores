@@ -9,13 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FavoriteRepository extends JpaRepository<Favorite,Long> {
-    
-    Optional<Favorite> findByUserIdAndPlantaId(Long userId, Long plantaId);
 
-    
-    List<Favorite> findByUserId(Long userId);
+    Optional<Favorite> findByUserIdAndFavorableIdAndFavorableType(Long userId, Long favorableId, String favorableType);
 
-    @Query("SELECT f FROM Favorite f JOIN FETCH f.planta WHERE f.user.id = :userId")
-    List<Favorite> findByUserIdWithPlanta(@Param("userId") Long userId);
+    @Query("SELECT f.favorableId FROM Favorite f WHERE f.user.id = :userId AND f.favorableType = :favorableType")
+    List<Long> findFavorableIdsByUserIdAndFavorableType(@Param("userId") Long userId, @Param("favorableType") String favorableType);
 
 }

@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Configuration
@@ -15,17 +17,17 @@ public class JacksonConfiguration {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(){
         return builder -> {
-            // formatter
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            DateTimeFormatter dateTimeFormatter =  DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+            // Standard ISO formatters
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            DateTimeFormatter dateTimeFormatter =  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-            // deserializers
-            builder.deserializers(new LocalDateDeserializer(dateFormatter));
-            builder.deserializers(new LocalDateTimeDeserializer(dateTimeFormatter));
+            // Deserializers
+            builder.deserializerByType(LocalDate.class, new LocalDateDeserializer(dateFormatter));
+            builder.deserializerByType(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
 
-            // serializers
-            builder.serializers(new LocalDateSerializer(dateFormatter));
-            builder.serializers(new LocalDateTimeSerializer(dateTimeFormatter));
+            // Serializers
+            builder.serializerByType(LocalDate.class, new LocalDateSerializer(dateFormatter));
+            builder.serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
         };
     }
 }

@@ -21,7 +21,7 @@ public class NutrienteController {
     private final NutrienteService nutrienteService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<NutrienteDto> createNutriente(@RequestBody NutrienteDto nutrienteDto) {
         log.info("\n\n[Capa Controller] 🍏 Solicitud para crear nutriente.");
         try {

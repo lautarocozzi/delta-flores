@@ -6,11 +6,17 @@ import DeltaFlores.web.entities.PruningEvent;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.PlantaRepository;
 import DeltaFlores.web.repository.PruningEventRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +29,14 @@ public class PruningEventService {
 
     private final PruningEventRepository pruningEventRepository;
     private final PlantaRepository plantaRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public PruningEventDto createPruningEvent(PruningEventDto dto) {
@@ -92,8 +106,17 @@ public class PruningEventService {
     @Transactional
     public PruningEventDto updatePruningEvent(Long id, PruningEventDto dto) {
         log.info("\n\n\u2b06\ufe0f Actualizando evento de poda con ID: {}", id);
+        User currentUser = getCurrentUser();
         PruningEvent existingEvent = pruningEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de poda no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setTipoPoda(dto.getTipoPoda());
@@ -114,9 +137,18 @@ public class PruningEventService {
     @Transactional
     public void deletePruningEvent(Long id) {
         log.info("\n\n\ud83d\udd1d\ufe0f Eliminando evento de poda con ID: {}", id);
-        if (!pruningEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de poda no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        PruningEvent event = pruningEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de poda no encontrado con id: " + id));
+        
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : event.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+
         pruningEventRepository.deleteById(id);
         log.info("\n\n\u2728 Evento de poda con ID: {} eliminado.", id);
     }

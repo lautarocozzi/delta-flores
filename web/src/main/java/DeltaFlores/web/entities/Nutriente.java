@@ -15,4 +15,8 @@ public class Nutriente {
     private String titulo;
     private String descripcion;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
 }

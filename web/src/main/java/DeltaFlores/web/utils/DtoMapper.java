@@ -112,16 +112,22 @@ public final class DtoMapper {
         plantaDto.setProduccion(planta.getProduccion());
         plantaDto.setFechaCreacion(planta.getFechaCreacion());
         if (planta.getSala() != null) {
-            plantaDto.setSala(DtoMapper.salaToSalaDto(planta.getSala()));
+            plantaDto.setSalaId(planta.getSala().getId());
         }
         if (planta.getCepa() != null) {
-            plantaDto.setCepaDto(cepaToCepaDto(planta.getCepa()));
+            plantaDto.setCepaId(planta.getCepa().getId());
+        }
+
+        if (planta.getEvents() != null && !planta.getEvents().isEmpty()) {
+            plantaDto.setEventIds(planta.getEvents().stream()
+                    .map(PlantEvent::getId)
+                    .collect(Collectors.toList()));
         }
 
         return plantaDto;
     }
 
-    public static Planta plantaDtoToPlanta(Planta planta, PlantaDto plantaDto) {
+    public static Planta plantaDtoToPlanta(Planta planta, PlantaDto plantaDto, Cepa cepa, Sala sala) {
         if (plantaDto.getId() != null && plantaDto.getId() > 0) {
             planta.setId(plantaDto.getId());
         }
@@ -129,16 +135,12 @@ public final class DtoMapper {
         planta.setPublic(plantaDto.isPublic());
         planta.setEtapa(plantaDto.getEtapa());
         planta.setFechaCreacion(plantaDto.getFechaCreacion());
-        if (plantaDto.getSala() != null) {
-            Sala sala = planta.getSala() != null ? planta.getSala() : new Sala();
-            planta.setSala(salaDtoToSala(plantaDto.getSala(), sala));
-        } else {
-            planta.setSala(null);
-        }
-        if (plantaDto.getCepaDto() != null) {
-            Cepa cepa = planta.getCepa() != null ? planta.getCepa() : new Cepa();
-            planta.setCepa(cepaDtoToCepa(plantaDto.getCepaDto(), cepa));
-        }
+        planta.setUbicacion(plantaDto.getUbicacion());
+        planta.setProduccion(plantaDto.getProduccion());
+        
+        // Set the entities that were fetched by the service
+        planta.setCepa(cepa);
+        planta.setSala(sala);
 
         return planta;
     }
@@ -188,6 +190,9 @@ public final class DtoMapper {
         dto.setId(nutriente.getId());
         dto.setTitulo(nutriente.getTitulo());
         dto.setDescripcion(nutriente.getDescripcion());
+        if (nutriente.getUser() != null) {
+            dto.setUserId(nutriente.getUser().getId());
+        }
         return dto;
     }
 
@@ -232,6 +237,7 @@ public final class DtoMapper {
     private static NoteEventDto noteEventToNoteEventDto(NoteEvent event) {
         NoteEventDto dto = new NoteEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("NOTE");
         dto.setText(event.getText());
         dto.setMediaUrls(event.getMediaUrls());
         return dto;
@@ -240,6 +246,7 @@ public final class DtoMapper {
     private static WateringEventDto wateringEventToWateringEventDto(WateringEvent event) {
         WateringEventDto dto = new WateringEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("WATERING");
         dto.setPhAgua(event.getPhAgua());
         dto.setEcAgua(event.getEcAgua());
         dto.setTempAgua(event.getTempAgua());
@@ -249,6 +256,7 @@ public final class DtoMapper {
     private static PruningEventDto pruningEventToPruningEventDto(PruningEvent event) {
         PruningEventDto dto = new PruningEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("PRUNING");
         dto.setTipoPoda(event.getTipoPoda());
         return dto;
     }
@@ -256,6 +264,7 @@ public final class DtoMapper {
     private static DefoliationEventDto defoliationEventToDefoliationEventDto(DefoliationEvent event) {
         DefoliationEventDto dto = new DefoliationEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("DEFOLIATION");
         dto.setGradoDefoliacion(event.getGradoDefoliacion());
         return dto;
     }
@@ -263,6 +272,7 @@ public final class DtoMapper {
     private static NutrientEventDto nutrientEventToNutrientEventDto(NutrientEvent event) {
         NutrientEventDto dto = new NutrientEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("NUTRIENT");
         dto.setNutriente(nutrienteToNutrienteDto(event.getNutriente()));
         return dto;
     }
@@ -270,6 +280,7 @@ public final class DtoMapper {
     private static StageChangeEventDto stageChangeEventToStageChangeEventDto(StageChangeEvent event) {
         StageChangeEventDto dto = new StageChangeEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("STAGE_CHANGE");
         dto.setNuevaEtapa(event.getNuevaEtapa());
         return dto;
     }
@@ -277,6 +288,7 @@ public final class DtoMapper {
     private static MeasurementEventDto measurementEventToMeasurementEventDto(MeasurementEvent event) {
         MeasurementEventDto dto = new MeasurementEventDto();
         copyCommonEventPropertiesToDto(event, dto);
+        dto.setEventType("MEASUREMENT");
         dto.setHorasLuz(event.getHorasLuz()); // Now String
         dto.setHumedad(event.getHumedad());
         dto.setTemperaturaAmbiente(event.getTemperaturaAmbiente());
@@ -288,7 +300,11 @@ public final class DtoMapper {
     private static void copyCommonEventPropertiesToDto(PlantEvent event, PlantEventDto dto) {
         dto.setId(event.getId());
         dto.setFecha(event.getFecha());
-
+        if (event.getPlantas() != null && !event.getPlantas().isEmpty()) {
+            dto.setPlantaIds(event.getPlantas().stream()
+                                  .map(Planta::getId)
+                                  .collect(Collectors.toList()));
+        }
     }
 
     // =====================================================================================

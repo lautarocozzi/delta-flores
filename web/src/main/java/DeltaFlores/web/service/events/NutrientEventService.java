@@ -8,13 +8,19 @@ import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.NutrientEventRepository;
 import DeltaFlores.web.repository.PlantaRepository;
 import DeltaFlores.web.repository.NutrienteRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.service.NutrienteService; // Inyectar NutrienteService
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,10 +34,18 @@ public class NutrientEventService {
 
     private final NutrientEventRepository nutrientEventRepository;
     private final PlantaRepository plantaRepository;
+    private final UserRepository userRepository;
     //private final NutrienteService nutrienteService; // Inyectar NutrienteService
 
     @Autowired
     private final NutrienteRepository nutrienteRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public NutrientEventDto createNutrientEvent(NutrientEventDto dto) {
@@ -110,8 +124,17 @@ public class NutrientEventService {
     @Transactional
     public NutrientEventDto updateNutrientEvent(Long id, NutrientEventDto dto) {
         log.info("\n\n⬆️ Actualizando evento de nutriente con ID: {}", id);
+        User currentUser = getCurrentUser();
         NutrientEvent existingEvent = nutrientEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de nutriente no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
 
@@ -143,9 +166,18 @@ public class NutrientEventService {
     @Transactional
     public void deleteNutrientEvent(Long id) {
         log.info("\n\n🗑️ Eliminando evento de nutriente con ID: {}", id);
-        if (!nutrientEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de nutriente no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        NutrientEvent event = nutrientEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de nutriente no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : event.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+
         nutrientEventRepository.deleteById(id);
         log.info("\n\n✨ Evento de nutriente con ID: {} eliminado.", id);
     }

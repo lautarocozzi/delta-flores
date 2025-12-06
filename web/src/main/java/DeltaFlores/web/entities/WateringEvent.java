@@ -15,4 +15,5 @@ public class WateringEvent extends PlantEvent {
     private double ecAgua;
     private double tempAgua;
 
+
 }

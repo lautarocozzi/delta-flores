@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "favorites", uniqueConstraints = {
-    // A user can only favorite a plant once
-    @UniqueConstraint(columnNames = {"user_id", "planta_id"})
+    // A user can only favorite a specific item of a specific type once
+    @UniqueConstraint(columnNames = {"user_id", "favorable_id", "favorable_type"})
 })
 public class Favorite {
 
@@ -23,12 +23,15 @@ public class Favorite {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "planta_id", nullable = false)
-    private Planta planta;
+    @Column(name = "favorable_id", nullable = false)
+    private Long favorableId;
 
-    public Favorite(User user, Planta planta) {
+    @Column(name = "favorable_type", nullable = false)
+    private String favorableType;
+
+    public Favorite(User user, Long favorableId, String favorableType) {
         this.user = user;
-        this.planta = planta;
+        this.favorableId = favorableId;
+        this.favorableType = favorableType;
     }
 }

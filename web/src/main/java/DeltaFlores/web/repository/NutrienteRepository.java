@@ -10,4 +10,6 @@ import java.util.List;
 public interface NutrienteRepository extends JpaRepository<Nutriente,Long> {
 
     List<Nutriente> findByTitulo(String titulo);
+
+    List<Nutriente> findByUserId(Long userId);
 }

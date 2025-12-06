@@ -23,6 +23,7 @@ public class PlantaController {
     @PostMapping
     @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<PlantaDto> createPlanta(@RequestBody PlantaDto plantaDto) {
+        log.info("DEBUG: Payload de PlantaDto recibido: " + plantaDto.toString());
         log.info("\n\n[Capa Controller] 📥 Solicitud para crear planta: {}", plantaDto.getNombre());
         try {
             PlantaDto createdPlanta = plantaService.createPlanta(plantaDto);

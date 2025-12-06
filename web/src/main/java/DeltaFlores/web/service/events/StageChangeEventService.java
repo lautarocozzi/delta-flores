@@ -6,11 +6,17 @@ import DeltaFlores.web.entities.StageChangeEvent;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.PlantaRepository;
 import DeltaFlores.web.repository.StageChangeEventRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +29,14 @@ public class StageChangeEventService {
 
     private final StageChangeEventRepository stageChangeEventRepository;
     private final PlantaRepository plantaRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public StageChangeEventDto createStageChangeEvent(StageChangeEventDto dto) {
@@ -98,8 +112,17 @@ public class StageChangeEventService {
     @Transactional
     public StageChangeEventDto updateStageChangeEvent(Long id, StageChangeEventDto dto) {
         log.info("\n\n⬆️ Actualizando evento de cambio de etapa con ID: {}", id);
+        User currentUser = getCurrentUser();
         StageChangeEvent existingEvent = stageChangeEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setNuevaEtapa(dto.getNuevaEtapa());
@@ -126,9 +149,18 @@ public class StageChangeEventService {
     @Transactional
     public void deleteStageChangeEvent(Long id) {
         log.info("\n\n🗑️ Eliminando evento de cambio de etapa con ID: {}", id);
-        if (!stageChangeEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        StageChangeEvent event = stageChangeEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
+        
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : event.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+
         stageChangeEventRepository.deleteById(id);
         log.info("\n\n✨ Evento de cambio de etapa con ID: {} eliminado.", id);
     }

@@ -6,11 +6,17 @@ import DeltaFlores.web.entities.Planta;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.DefoliationEventRepository;
 import DeltaFlores.web.repository.PlantaRepository;
+import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.AppRole;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +29,14 @@ public class DefoliationEventService {
 
     private final DefoliationEventRepository defoliationEventRepository;
     private final PlantaRepository plantaRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        return userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
 
     @Transactional
     public DefoliationEventDto createDefoliationEvent(DefoliationEventDto dto) {
@@ -87,8 +101,17 @@ public class DefoliationEventService {
     @Transactional
     public DefoliationEventDto updateDefoliationEvent(Long id, DefoliationEventDto dto) {
         log.info("\n\n\u2B06\uFE0F Actualizando evento de defoliación con ID: {}", id);
+        User currentUser = getCurrentUser();
         DefoliationEvent existingEvent = defoliationEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de defoliación no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : existingEvent.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para actualizar este evento");
+                }
+            }
+        }
 
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setGradoDefoliacion(dto.getGradoDefoliacion());
@@ -110,9 +133,18 @@ public class DefoliationEventService {
     @Transactional
     public void deleteDefoliationEvent(Long id) {
         log.info("\n\n\uD83D\uDDD1\uFE0F Eliminando evento de defoliación con ID: {}", id);
-        if (!defoliationEventRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Evento de defoliación no encontrado con id: " + id);
+        User currentUser = getCurrentUser();
+        DefoliationEvent event = defoliationEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento de defoliación no encontrado con id: " + id));
+
+        if (currentUser.getRol() == AppRole.ROLE_GROWER) {
+            for (Planta planta : event.getPlantas()) {
+                if (!planta.getUser().equals(currentUser)) {
+                    throw new AccessDeniedException("No tienes permiso para eliminar este evento");
+                }
+            }
         }
+
         defoliationEventRepository.deleteById(id);
         log.info("\n\n\u2728 Evento de defoliación con ID: {} eliminado.", id);
     }

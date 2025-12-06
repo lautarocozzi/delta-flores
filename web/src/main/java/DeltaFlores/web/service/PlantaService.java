@@ -4,10 +4,12 @@ import DeltaFlores.web.dto.PlantaDto;
 import DeltaFlores.web.dto.SalaDto;
 import DeltaFlores.web.entities.Cepa;
 import DeltaFlores.web.entities.Planta;
+import DeltaFlores.web.entities.Sala;
 import DeltaFlores.web.entities.User;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.CepaRepository;
 import DeltaFlores.web.repository.PlantaRepository;
+import DeltaFlores.web.repository.SalaRepository;
 import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.security.CustomUserDetails;
 import DeltaFlores.web.utils.DtoMapper;
@@ -31,6 +33,7 @@ public class PlantaService {
     private final UserRepository userRepository;
     private final SalaService salaService;
     private final CepaRepository cepaRepository;
+    private final SalaRepository salaRepository;
 
     // --- Security & Helper Methods ---
 
@@ -75,14 +78,10 @@ public class PlantaService {
         User currentUser = getCurrentUser();
         log.info("Usuario '{}' creando nueva planta: {}", currentUser.getUsername(), plantaDto.getNombre());
 
-        // Ensure the user owns the sala they are assigning the plant to
-        SalaDto targetSalaDto = salaService.getSalaById(plantaDto.getSala().getId());
-        log.info("Sala target con ID {} verificada para el usuario.", targetSalaDto.getId());
-
-        Cepa cepa = cepaRepository.findById(plantaDto.getCepaDto().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaDto().getId()));
-
-        // Authorization check for Cepa
+        // Fetch Cepa and check authorization
+        Cepa cepa = cepaRepository.findById(plantaDto.getCepaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaId()));
+        
         boolean isOwner = cepa.getUser().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getAuthorities().stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN") || role.getAuthority().equals("ROLE_SUPER_ADMIN"));
@@ -93,16 +92,16 @@ public class PlantaService {
             throw new AccessDeniedException("No tienes permiso para usar esta cepa. Solo los dueños o administradores pueden hacerlo.");
         }
 
-        Planta planta = new Planta();
-        planta.setNombre(plantaDto.getNombre());
-        planta.setEtapa(plantaDto.getEtapa());
-        planta.setProduccion(plantaDto.getProduccion());
-        planta.setUbicacion(plantaDto.getUbicacion());
-        planta.setFechaCreacion(plantaDto.getFechaCreacion());
-        planta.setUser(currentUser); // Set owner
-        planta.setSala(DtoMapper.salaDtoToSala(targetSalaDto, null));
-        planta.setCepa(cepa);
+        // Fetch Sala and check ownership
+        Sala sala = salaRepository.findById(plantaDto.getSalaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + plantaDto.getSalaId()));
+        if (!sala.getUser().getId().equals(currentUser.getId()) && !isAdmin(getAuthentication())) {
+             throw new AccessDeniedException("No tiene permiso para asignar una planta a esta sala.");
+        }
 
+
+        Planta planta = DtoMapper.plantaDtoToPlanta(new Planta(), plantaDto, cepa, sala);
+        planta.setUser(currentUser); // Set owner
 
         Planta savedPlanta = plantaRepository.save(planta);
         log.info("Planta {} creada con ID: {} para el usuario '{}'", savedPlanta.getNombre(), savedPlanta.getId(), currentUser.getUsername());
@@ -150,24 +149,31 @@ public class PlantaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + id));
         checkOwnership(existingPlanta);
 
-        // If the sala is being changed, verify ownership of the new sala
-        if (!existingPlanta.getSala().getId().equals(plantaDto.getSala().getId())) {
-            SalaDto newSala = salaService.getSalaById(plantaDto.getSala().getId());
-            log.info("El usuario también es propietario de la nueva sala de destino ID: {}. Procediendo con la actualización.", newSala.getId());
-        }
+        // Fetch Cepa and check authorization
+        Cepa cepa = cepaRepository.findById(plantaDto.getCepaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaId()));
         
-        Cepa cepa = cepaRepository.findById(plantaDto.getCepaDto().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaDto().getId()));
+        User currentUser = getCurrentUser();
+        boolean isOwner = cepa.getUser().getId().equals(currentUser.getId());
+        boolean isAdmin = isAdmin(getAuthentication());
 
-        // Map updated fields from DTO
-        existingPlanta.setNombre(plantaDto.getNombre());
-        existingPlanta.setEtapa(plantaDto.getEtapa());
-        existingPlanta.setProduccion(plantaDto.getProduccion());
-        existingPlanta.setUbicacion(plantaDto.getUbicacion());
-        existingPlanta.setSala(DtoMapper.salaDtoToSala(plantaDto.getSala(), null));
-        existingPlanta.setCepa(cepa);
+        if (!isOwner && !isAdmin) {
+            log.warn("ACCESO DENEGADO: El usuario '{}' intentó actualizar una planta usando la cepa con ID: {}, que no le pertenece.",
+                    currentUser.getUsername(), cepa.getId());
+            throw new AccessDeniedException("No tienes permiso para usar esta cepa.");
+        }
+
+        // Fetch Sala and check ownership
+        Sala sala = salaRepository.findById(plantaDto.getSalaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + plantaDto.getSalaId()));
+        if (!sala.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+             throw new AccessDeniedException("No tiene permiso para asignar una planta a esta sala.");
+        }
+
+        // Use the mapper to update the entity
+        Planta updatedPlanta = DtoMapper.plantaDtoToPlanta(existingPlanta, plantaDto, cepa, sala);
         
-        Planta updatedPlanta = plantaRepository.save(existingPlanta);
+        plantaRepository.save(updatedPlanta);
         log.info("Planta con ID: {} actualizada con éxito.", updatedPlanta.getId());
         return DtoMapper.plantaToPlantaDto(updatedPlanta);
     }
