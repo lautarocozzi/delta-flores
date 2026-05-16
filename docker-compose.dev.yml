@@ -1,0 +1,34 @@
+# ================================================================
+# FLORES DELTA — Dev Override (Hot Reload Frontend)
+# ================================================================
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile minio up -d
+#
+# Después: cualquier cambio en src/ se refleja al instante
+# El frontend queda en http://localhost:5173
+# ================================================================
+
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "5173:8081"   # Vite dev server (mapeamos 5173 externo → 8081 interno de Vite)
+    volumes:
+      # Montar index.html para cambios en el entry point
+      - ./frontend/index.html:/app/index.html
+      # Montar src/ en caliente para HMR
+      - ./frontend/src:/app/src
+      # Montar public/ para assets estáticos
+      - ./frontend/public:/app/public
+    # Sin healthcheck en dev — el dev server tarda en arrancar
+    healthcheck:
+      disable: true
+    # Para que Vite HMR funcione con WebSocket desde el browser
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true

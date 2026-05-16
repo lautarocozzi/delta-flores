@@ -1,0 +1,21 @@
+# Frontend .dockerignore
+node_modules/
+dist/
+build/
+.git/
+.gitignore
+.env
+.env.local
+*.log
+*.md
+Dockerfile
+.dockerignore
+
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDEs
+.idea/
+.vscode/

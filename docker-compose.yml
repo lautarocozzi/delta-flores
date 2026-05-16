@@ -1,0 +1,154 @@
+# ================================================================
+# FLORES DELTA — Docker Compose
+# ================================================================
+# Servicios: postgres · backend · frontend · minio (archivos)
+#
+# USO:
+#   docker compose up -d                     → 3 servicios (sin MinIO)
+#   docker compose --profile minio up -d     → 4 servicios (con MinIO)
+#   docker compose --profile full up -d      → todos
+#
+# IMPORTANTE: El backend necesita MinIO para manejar fotos/media.
+# Sin MinIO, las operaciones de archivo fallarán, pero la app
+# funciona para CRUD básico de plantas, salas, cepas, etc.
+# Si querés funcionalidad completa, usá --profile minio.
+# ================================================================
+
+version: '3.8'
+
+services:
+
+  # ================================
+  # DATABASE (PostgreSQL 15)
+  # ================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: flores-delta-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-flores_delta_db}
+      POSTGRES_USER: ${DB_USERNAME:-flores_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-flores_user} -d ${DB_NAME:-flores_delta_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - flores-network
+
+  # ================================
+  # BACKEND (Spring Boot 21 + Java 21)
+  # ================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flores-delta-backend
+    restart: unless-stopped
+    environment:
+      # PostgreSQL
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-flores_delta_db}
+      DB_USERNAME: ${DB_USERNAME:-flores_user}
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_change_this}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # MinIO — opcional: si MinIO no está disponible, igual arranca
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-flores-delta-media}
+      # Perfil: "prod" requiere MinIO · "minio" también
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - flores-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # ================================
+  # FRONTEND (React + Vite + Nginx)
+  # ================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # La URL del backend desde el browser. localhost:8080 funciona
+        # porque Docker mapea el puerto 8080 del backend al host.
+        # No usar "http://backend:8080" — el browser NO resuelve "backend".
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    container_name: flores-delta-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - flores-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ================================
+  # OBJECT STORAGE (MinIO)
+  # Necesario para fotos/media de plantas
+  # Activación: docker compose --profile minio up -d
+  # ================================
+  minio:
+    profiles: [ "minio", "full" ]
+    image: minio/minio:latest
+    container_name: flores-delta-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console UI
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 20s
+    networks:
+      - flores-network
+
+# ================================
+# VOLUMES
+# ================================
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# ================================
+# NETWORKS
+# ================================
+networks:
+  flores-network:
+    driver: bridge

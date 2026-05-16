@@ -1,0 +1,36 @@
+# Dependencies
+/node_modules
+/dist
+
+# Local Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary files
+*.timestamp-*.mjs
+*.checkpoint-*
+*VisionA.tsx
+*VisionB.tsx
+
+# IDE / Editor specific
+.vscode/
+.idea/
+
+# Dead files removed after cleanup
+/SPRINT 3
+/debug-auth.html
+/verificar_localstorage.html
+/fix-planttimeline-url.ps1
+/clear_localstorage.ps1
+/BACKEND
+
+# OS specific
+.DS_Store
+Thumbs.db

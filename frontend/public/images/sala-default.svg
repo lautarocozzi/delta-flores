@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a2e1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d1a0d;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.2" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" fill="url(#bgGrad)"/>
+  
+  <!-- Grid pattern -->
+  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.1"/>
+  </pattern>
+  <rect width="200" height="200" fill="url(#grid)"/>
+  
+  <!-- Center icon (location pin) -->
+  <g transform="translate(100, 90)">
+    <path d="M0 -30 C-16.5 -30 -30 -16.5 -30 0 C-30 10 -20 25 0 45 C20 25 30 10 30 0 C30 -16.5 16.5 -30 0 -30 Z" fill="url(#iconGrad)"/>
+    <circle cx="0" cy="-5" r="10" fill="#10b981" fill-opacity="0.4"/>
+  </g>
+  
+  <!-- Bottom fade -->
+  <rect y="150" width="200" height="50" fill="url(#bottomFade)"/>
+  <defs>
+    <linearGradient id="bottomFade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1a0d;stop-opacity:0" />
+      <stop offset="100%" style="stop-color:#0d1a0d;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+</svg>

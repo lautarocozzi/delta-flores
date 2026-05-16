@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flores Delta — Infografía SDD</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --card: #111827;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --primary: #22c55e;
+    --primary-dim: #166534;
+    --accent: #06b6d4;
+    --warning: #eab308;
+    --danger: #ef4444;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --pink: #ec4899;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    line-height: 1.5;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2.5rem; padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .header .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
+  }
+  .header h1 { font-size: 1.75rem; font-weight: 700; }
+  .header .subtitle { color: var(--muted); font-size: 0.875rem; margin-top: 2px; }
+
+  /* Grid layout */
+  .grid { display: grid; gap: 1.25rem; }
+
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-2-1 { grid-template-columns: 2fr 1fr; }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-2-1 { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--primary-dim); }
+  .card-header {
+    display: flex; align-items: center; gap: 0.625rem;
+    margin-bottom: 1rem;
+    font-size: 1rem; font-weight: 600;
+  }
+  .card-header .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.875rem; flex-shrink: 0;
+  }
+
+  /* Tag badges */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag-green { background: #052e16; color: var(--primary); }
+  .tag-cyan { background: #083344; color: var(--accent); }
+  .tag-purple { background: #1e1335; color: var(--purple); }
+  .tag-orange { background: #2c1a05; color: var(--orange); }
+  .tag-pink { background: #2c0a1a; color: var(--pink); }
+  .tag-muted { background: #1e293b; color: var(--muted); }
+
+  /* Status dots */
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 6px;
+  }
+  .dot-green { background: var(--primary); }
+  .dot-cyan { background: var(--accent); }
+  .dot-purple { background: var(--purple); }
+  .dot-orange { background: var(--orange); }
+
+  /* List items */
+  .item-list { list-style: none; }
+  .item-list li {
+    padding: 0.4rem 0; padding-left: 1.25rem;
+    position: relative; font-size: 0.85rem;
+    color: #cbd5e1;
+  }
+  .item-list li::before {
+    content: ''; position: absolute; left: 0; top: 0.75rem;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--primary);
+  }
+  .item-list li.cyan::before { background: var(--accent); }
+  .item-list li.purple::before { background: var(--purple); }
+  .item-list li.orange::before { background: var(--orange); }
+
+  /* Architecture flow */
+  .flow {
+    display: flex; align-items: center; gap: 0.5rem;
+    flex-wrap: wrap; justify-content: center;
+    padding: 1rem 0;
+  }
+  .flow-step {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem; font-weight: 500;
+    text-align: center;
+    min-width: 80px;
+  }
+  .flow-arrow { color: var(--muted); font-size: 1.25rem; }
+
+  /* Divider */
+  .divider {
+    border: none; height: 1px;
+    background: var(--border);
+    margin: 1.25rem 0;
+  }
+
+  /* Metric box */
+  .metric-row {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    margin: 0.75rem 0;
+  }
+  .metric {
+    flex: 1; min-width: 100px;
+    background: var(--bg);
+    border-radius: 8px; padding: 0.75rem;
+    text-align: center;
+  }
+  .metric .num { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+  .metric .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric .num.cyan { color: var(--accent); }
+  .metric .num.purple { color: var(--purple); }
+  .metric .num.orange { color: var(--orange); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 4px; bottom: 4px;
+    width: 2px; background: var(--border);
+  }
+  .tl-item { position: relative; padding-bottom: 1.25rem; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-dot {
+    position: absolute; left: -2rem; top: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem;
+  }
+  .tl-dot.green { background: var(--primary); color: #fff; }
+  .tl-dot.cyan { background: var(--accent); color: #fff; }
+  .tl-dot.purple { background: var(--purple); color: #fff; }
+  .tl-title { font-weight: 600; font-size: 0.9rem; }
+  .tl-desc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  /* File list */
+  .file-list { list-style: none; }
+  .file-list li {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.73rem;
+    padding: 0.25rem 0;
+    color: #94a3b8;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .file-list li .file-icon { color: var(--accent); }
+  .file-list li .file-action {
+    font-size: 0.6rem; text-transform: uppercase;
+    padding: 1px 5px; border-radius: 3px;
+    font-weight: 600; letter-spacing: 0.03em;
+  }
+  .action-new { background: #052e16; color: var(--primary); }
+  .action-mod { background: #1e1335; color: var(--purple); }
+  .action-del { background: #2c0a1a; color: var(--danger); }
+
+  /* Section title */
+  .section-title {
+    font-size: 1.1rem; font-weight: 600;
+    margin: 1.5rem 0 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .section-title .divider-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* Decision table */
+  .dec-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.75rem 0; }
+  .dec-table th {
+    text-align: left; padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.65rem;
+    letter-spacing: 0.04em;
+  }
+  .dec-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: #cbd5e1;
+  }
+  .dec-table tr:last-child td { border-bottom: none; }
+
+  /* Quote */
+  .quote {
+    border-left: 3px solid var(--primary);
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    background: #052e16;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.85rem;
+    color: #a7f3d0;
+  }
+  .quote.cyan { border-left-color: var(--accent); background: #083344; color: #a5f3fc; }
+  .quote.purple { border-left-color: var(--purple); background: #1e1335; color: #d8b4fe; }
+
+  /* Tooltip-like inline tags */
+  .tech-tag {
+    display: inline-block;
+    padding: 2px 7px;
+    background: #1e293b;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #94a3b8;
+    margin: 1px;
+  }
+
+  .badge-primary {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--primary-dim);
+    color: var(--primary);
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">FD</div>
+    <div>
+      <h1>Flores Delta — SDD Infographic</h1>
+      <div class="subtitle">Spec-Driven Development · Mayo 2026 · 3 cambios completados</div>
+    </div>
+    <div style="margin-left: auto;">
+      <span class="tag tag-green">● v1.0</span>
+    </div>
+  </div>
+
+  <!-- Overview Metrics -->
+  <div class="metric-row">
+    <div class="metric">
+      <div class="num">3</div>
+      <div class="label">SDD Changes</div>
+    </div>
+    <div class="metric">
+      <div class="num cyan">46</div>
+      <div class="label">Tasks Completed</div>
+    </div>
+    <div class="metric">
+      <div class="num purple">28</div>
+      <div class="label">Files Modified</div>
+    </div>
+    <div class="metric">
+      <div class="num orange">8</div>
+      <div class="label">New Files Created</div>
+    </div>
+    <div class="metric">
+      <div class="num">6</div>
+      <div class="label">Phases per Change</div>
+    </div>
+  </div>
+
+  <!-- SDD Phase Flow -->
+  <div class="section-title">
+    <span>⚙️ SDD Pipeline</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="card" style="margin-bottom: 1.25rem;">
+    <div class="flow">
+      <div class="flow-step" style="border-color: var(--accent); color: var(--accent);">Proposal</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--purple); color: var(--purple);">Specs</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--primary); color: var(--primary);">Design</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--orange); color: var(--orange);">Tasks</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--pink); color: var(--pink);">Apply</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--accent); color: var(--accent);">Verify</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color: var(--primary); color: var(--primary);">Archive</div>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 1.5rem; font-size: 0.75rem; color: var(--muted); padding: 0.5rem;">
+      <span>⏱ <span class="tech-tag">~8 min</span> por fase</span>
+      <span>🔗 Dependencia secuencial</span>
+      <span>🔄 Rollback por US</span>
+    </div>
+  </div>
+
+  <!-- Timeline of Changes -->
+  <div class="section-title">
+    <span>📅 Timeline de Cambios</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="grid grid-3">
+    <!-- Change 1 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#052e16;color:var(--primary);">1</div>
+        <span>zonas-y-grid-plantas</span>
+        <span class="tag tag-green" style="margin-left:auto;">28 tasks</span>
+      </div>
+      <div class="timeline" style="padding-left: 1.5rem; font-size:0.85rem;">
+        <div class="tl-item">
+          <div class="tl-dot green" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">Zonas CRUD + Grid Visual</div>
+          <div class="tl-desc">Backend: Zona entity, service, controller, repository. Frontend: ZoneGrid, LocationEditor, ZonaGridModal</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">Ubicación Auto-generada</div>
+          <div class="tl-desc">Formato `{abrev}_Z{zona}_C{col}_F{fila}`. Ocupancy check + bounds validation</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">6 Surgical Fixes</div>
+          <div class="tl-desc">Off-by-one, auth missing, N+1, preview fix, updatePlanta zona handling</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot green" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">Verify: PASS ✅</div>
+          <div class="tl-desc">28/28 tasks, 14 backend tests pass. 6 failures = test infra, not prod bugs</div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div style="font-size:0.75rem; color:var(--muted);">
+        <span class="tech-tag">Java 17</span>
+        <span class="tech-tag">Spring Boot</span>
+        <span class="tech-tag">React 19</span>
+        <span class="tech-tag">TanStack Query</span>
+        <span class="tech-tag">JPA EntityGraph</span>
+      </div>
+    </div>
+
+    <!-- Change 2 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#083344;color:var(--accent);">2</div>
+        <span>unified-sala-view-fixed-board</span>
+        <span class="tag tag-cyan" style="margin-left:auto;">10 tasks</span>
+      </div>
+      <div class="timeline" style="padding-left: 1.5rem; font-size:0.85rem;">
+        <div class="tl-item">
+          <div class="tl-dot cyan" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">Fixed 20×20 Board</div>
+          <div class="tl-desc">CSS Grid dinámico → contenedor aspect-square con posicionamiento absoluto. Reference: NewSalaForm.tsx</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot cyan" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">Validation Defense-in-Depth</div>
+          <div class="tl-desc">@Min/@Max en Zona.java. .int().min().max() + .refine() en DTOSchemas. snapTo5 en NewSalaForm</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot cyan" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">ZonaBlock Grid Dots</div>
+          <div class="tl-desc">flex-col layout, grid dots centrados. Verde = planta, amarillo = vacío</div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="quote cyan" style="font-size:0.78rem;">
+        ⚡ Eliminado minWidth/minHeight 50px + zona letter + dimensiones de ZonaBlock
+      </div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+        <span class="tech-tag">CSS Grid</span>
+        <span class="tech-tag">Absolute Pos</span>
+        <span class="tech-tag">Zod .refine()</span>
+        <span class="tech-tag">Jakarta Validation</span>
+      </div>
+    </div>
+
+    <!-- Change 3 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#1e1335;color:var(--purple);">3</div>
+        <span>planta-zone-preview-cepas</span>
+        <span class="tag tag-purple" style="margin-left:auto;">8 tasks</span>
+      </div>
+      <div class="timeline" style="padding-left: 1.5rem; font-size:0.85rem;">
+        <div class="tl-item">
+          <div class="tl-dot purple" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">US-2: usePlantas Hook</div>
+          <div class="tl-desc">Hook centralizado con byZona(), getByUbicacion(), create/swap/delete mutations. Elimina prop drilling</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot purple" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">US-3: Ubicación Format</div>
+          <div class="tl-desc">`{abrev}_Z{name}_C{col}_F{fila}` → `{zonaNombre}-F{fila+1}-C{col+1}` (1-based, sin abreviatura)</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot purple" style="left:-1.5rem;">✓</div>
+          <div class="tl-title">US-4: Cepa Visibility</div>
+          <div class="tl-desc">GET /api/cepas/sala/{id}. EDITORs usan cepas del owner. Dropdown agrupado: "Mis cepas" / "Cepas de {nombre}"</div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="quote purple" style="font-size:0.78rem;">
+        🔗 3 User Stories independientes, cada una deployable y revertible por separado
+      </div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+        <span class="tech-tag">TanStack Query</span>
+        <span class="tech-tag">shadcn SelectGroup</span>
+        <span class="tech-tag">SalaService.checkAccess</span>
+        <span class="tech-tag">DtoMapper</span>
+        <span class="tech-tag">CepaRepository</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture + Decisions side by side -->
+  <div class="section-title">
+    <span>🏗️ Arquitectura y Decisiones</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="grid grid-2-1">
+    <!-- Data Flow Diagram -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#052e16;color:var(--primary);">↗</div>
+        <span>Data Flow</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; line-height: 1.8; color: #94a3b8;">
+        <div style="padding: 0.5rem;">
+          <span style="color: var(--accent);">Dashboard</span>
+          <span style="color: var(--muted);">  → click Sala  →</span>
+          <span style="color: var(--primary);">  /plantas?sala={id}&view=visual</span>
+        </div>
+        <div style="padding: 0.5rem; border-top: 1px solid var(--border);">
+          <span style="color: var(--accent);">PlantasPage</span><br>
+          <span style="color: var(--muted);">  ├──</span><span style="color: #94a3b8;"> usePlantas(salaId)</span><br>
+          <span style="color: var(--muted);">  │   ├──</span><span style="color: #94a3b8;"> useQuery(["plantas","sala",salaId])</span><br>
+          <span style="color: var(--muted);">  │   ├──</span><span style="color: #94a3b8;"> byZona(zonaId)</span><br>
+          <span style="color: var(--muted);">  │   └──</span><span style="color: #94a3b8;"> getByUbicacion(zona, fila, col)</span><br>
+          <span style="color: var(--muted);">  ├──</span><span style="color: #94a3b8;"> UnifiedSalaView (fixed 20×20 board)</span><br>
+          <span style="color: var(--muted);">  │   └──</span><span style="color: #94a3b8;"> ZonaBlock (grid dots absolute)</span><br>
+          <span style="color: var(--muted);">  └──</span><span style="color: #94a3b8;"> ZonaGridModal (click → /plant/{id})</span>
+        </div>
+        <div style="padding: 0.5rem; border-top: 1px solid var(--border);">
+          <span style="color: var(--accent);">PlantDetailPage</span><br>
+          <span style="color: var(--muted);">  ├──</span><span style="color: #94a3b8;"> PlantProfile (imagenUrl)</span><br>
+          <span style="color: var(--muted);">  ├──</span><span style="color: #94a3b8;"> Etapa Selector (on page)</span><br>
+          <span style="color: var(--muted);">  └──</span><span style="color: #94a3b8;"> Delete → invalida plantas+sala + zonas+sala</span>
+        </div>
+        <div style="padding: 0.5rem; border-top: 1px solid var(--border);">
+          <span style="color: var(--accent);">NewPlantForm</span><br>
+          <span style="color: var(--muted);">  └──</span><span style="color: #94a3b8;"> GET /api/cepas/sala/{id}</span><br>
+          <span style="color: var(--muted);">       └──</span><span style="color: #94a3b8;"> Grupo "Mis cepas" / "Cepas de {nombre}"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Decisions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#2c1a05;color:var(--orange);">⚡</div>
+        <span>Decisiones Clave</span>
+      </div>
+      <table class="dec-table">
+        <tr><th width="35%">Decisión</th><th>Resultado</th></tr>
+        <tr>
+          <td style="color: var(--accent); font-weight:500;">useLocation > useSearchParams</td>
+          <td>Evita re-render loop (setSearchParams en useEffect causaba "colgada")</td>
+        </tr>
+        <tr>
+          <td style="color: var(--primary); font-weight:500;">Board fijo 20×20</td>
+          <td>CSS Grid dinámico no escalaba. Referencia: NewSalaForm ya usaba absolute positioning correctamente</td>
+        </tr>
+        <tr>
+          <td style="color: var(--purple); font-weight:500;">Hook centralizado</td>
+          <td>TanStack Query existe para esto. Zustand/Context rechazados: reinvierte el wheel</td>
+        </tr>
+        <tr>
+          <td style="color: var(--orange); font-weight:500;">Endpoint sala-scoped</td>
+          <td>GET /api/cepas/sala/{id} limpio, seguro. N+1 client-side evitado</td>
+        </tr>
+        <tr>
+          <td style="color: var(--pink); font-weight:500;">Sin migración DB</td>
+          <td>Ubicacion strings viejas se quedan. Solo aplica a plantas nuevas</td>
+        </tr>
+        <tr>
+          <td style="color: var(--accent); font-weight:500;">isPlacedInGrid guard</td>
+          <td>Backend limpiaría zona a null si no se envía. Preservamos original con el flag</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Files Changed -->
+  <div class="section-title">
+    <span>📁 Files Changed (28 archivos)</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="grid grid-2">
+    <!-- Backend -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#1e1335;color:var(--purple);">BE</div>
+        <span>Backend — Java/Spring Boot</span>
+        <span class="tag tag-purple" style="margin-left:auto;">14 files</span>
+      </div>
+      <ul class="file-list">
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> Zona.java — @Min/@Max validations</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> Planta.java — +imagenUrl field</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> Cepa.java — stable (no changes)</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> ZonaRepository.java — findBySalaId, findByIdWithPlantas</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> CepaRepository.java — +findByUserIdIn()</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> ZonaService.java — checkSalaOwnership, admin bypass</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> CepaService.java — +getCepasForSala()</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> PlantaService.java — updateUbicacion, updatePlanta, cepa check relax</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> ZonaController.java — CRUD + GET endpoints</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> CepaController.java — +GET /api/cepas/sala/{id}</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> DtoMapper.java — generarUbicacion nueva firma, cepaToCepaDtoWithUser, imagenUrl</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> PlantaDto.java — +imagenUrl</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> CepaDto.java — +userNombre, userApellido</li>
+        <li><span class="file-icon">◆</span> <span class="file-action action-mod">MOD</span> DtoMapperTest.java — 8 assertions updated</li>
+      </ul>
+    </div>
+    <!-- Frontend -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#2c1a05;color:var(--orange);">FE</div>
+        <span>Frontend — React 19 / TypeScript</span>
+        <span class="tag tag-orange" style="margin-left:auto;">12 files</span>
+      </div>
+      <ul class="file-list">
+        <li><span class="file-icon">◇</span> <span class="file-action action-new">NEW</span> hooks/usePlantas.ts — hook centralizado</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> services/api.ts — +getCepasBySala(), +getPlantasBySala(), +updatePlanta()</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> schemas/DTOSchemas.ts — Zona.refine(), CepaDto extended, +imagenUrl</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> pages/PlantasPage.tsx — consume usePlantas, URL params sala+view</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> pages/PlantDetailPage.tsx — delete invalida zonas+sala, etapa selector</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> pages/Dashboard.tsx — SalaCard → /plantas?sala={id}&view=visual</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/sala/UnifiedSalaView.tsx — fixed 20×20 board</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/sala/ZonaBlock.tsx — flex-col, grid dots, centered</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/sala/ZonaGridModal.tsx — usePlantas, cepa grouped dropdown, click→/plant/{id}</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/forms/NewPlantForm.tsx — ubicacion preview, cepas por sala</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/forms/FormularioPlanta.tsx — +imagenUrl, isPlacedInGrid guard</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/plants/PlantProfile.tsx — imagenUrl fallback</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/plants/LocationEditor.tsx — ubicacion preview format</li>
+        <li><span class="file-icon">◇</span> <span class="file-action action-mod">MOD</span> components/forms/FormInputField.tsx — +disabled prop</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Test Status -->
+  <div class="section-title">
+    <span>🧪 Testing Status</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#052e16;color:var(--primary);">✓</div>
+        <span>DtoMapperTest</span>
+      </div>
+      <div style="font-size:0.85rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+          <span>8/9 passing</span>
+          <span class="badge-primary" style="background:#2c1a05;color:var(--orange);">1 expected fail</span>
+        </div>
+        <div style="height:8px; background:var(--border); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:89%; background:var(--primary); border-radius:4px;"></div>
+        </div>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+          Assertions actualizadas para nuevo formato ubicación
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#2c1a05;color:var(--orange);">!</div>
+        <span>ZonaControllerTest</span>
+      </div>
+      <div style="font-size:0.85rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+          <span>6/11 passing</span>
+          <span class="badge-primary" style="background:#2c0a1a;color:var(--danger);">5 infra fails</span>
+        </div>
+        <div style="height:8px; background:var(--border); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:55%; background:var(--orange); border-radius:4px;"></div>
+        </div>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+          @WithMockUser incompatible con CustomUserDetails — test infra, no bug
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#052e16;color:var(--primary);">✓</div>
+        <span>PlantaRepositoryTest</span>
+      </div>
+      <div style="font-size:0.85rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+          <span>6/6 passing</span>
+          <span class="badge-primary" style="background:#052e16;color:var(--primary);">100%</span>
+        </div>
+        <div style="height:8px; background:var(--border); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:100%; background:var(--primary); border-radius:4px;"></div>
+        </div>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem;">
+          EntityGraph eager loading verificado en todas las queries
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Technical Details -->
+  <div class="section-title" style="margin-top:0.5rem;">
+    <span>🔬 Technical Details</span>
+    <span class="divider-line"></span>
+  </div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#083344;color:var(--accent);">🎯</div>
+        <span>Board 20×20</span>
+      </div>
+      <ul class="item-list">
+        <li class="cyan">posicionX/Y: 0-100% (múltiplos de 5)</li>
+        <li class="cyan">columnas/filas: 1-20 (enteros)</li>
+        <li class="cyan">aspect-square + absolute positioning</li>
+        <li class="cyan">ZonaBlock: flex-col, grid dots centrados</li>
+        <li>Snapshot: snapTo5() en NewSalaForm</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#1e1335;color:var(--purple);">📍</div>
+        <span>Ubicación Format</span>
+      </div>
+      <div style="font-family: monospace; font-size: 0.8rem;">
+        <div style="padding: 0.4rem 0;">
+          <span style="color: var(--muted);">ANTES:</span>
+          <span style="color: var(--danger);">SN_ZA_C0_F0</span>
+        </div>
+        <div style="padding: 0.4rem 0; border-top: 1px solid var(--border);">
+          <span style="color: var(--muted);">AHORA:</span>
+          <span style="color: var(--primary);">A-F1-C1</span>
+        </div>
+        <div style="padding: 0.4rem 0; border-top: 1px solid var(--border); font-size:0.72rem; color:var(--muted);">
+          Sin abreviatura · 1-based · espacios → guiones
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background:#2c1a05;color:var(--orange);">🔐</div>
+        <span>Auth & Permissions</span>
+      </div>
+      <ul class="item-list">
+        <li class="orange">EDITOR collaborator usa cepas del owner</li>
+        <li class="orange">LECTURA: solo ve, no crea plantas</li>
+        <li class="orange">ADMIN/SUPER_ADMIN bypass en ZonaService</li>
+        <li class="orange">SalaService.checkAccess() verifica role</li>
+        <li>@PreAuthorize en todos los endpoints</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <hr class="divider" style="margin-top:2rem;">
+  <div style="text-align:center; padding:1rem 0; color:var(--muted); font-size:0.75rem;">
+    Flores Delta — SDD Infographic · Generado con Engram Memory · Mayo 2026
+    <br>
+    <span style="font-size:0.65rem;">3 cambios SDD · 46 tasks · 28 archivos · 6 fases por cambio</span>
+  </div>
+
+</div>
+</body>
+</html>

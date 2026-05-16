@@ -1,0 +1,21 @@
+# ================================
+# DEV — Hot Reload con Vite
+# ================================
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copiar package files e instalar
+COPY package*.json ./
+RUN npm ci
+
+# Copiar configs
+COPY vite.config.ts tsconfig*.json tailwind.config.ts postcss.config.js eslint.config.js ./
+COPY index.html ./
+COPY components.json ./
+
+# Puerto de Vite dev server
+EXPOSE 5173
+
+# Dev server con HMR
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

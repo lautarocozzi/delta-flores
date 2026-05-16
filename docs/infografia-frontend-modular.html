@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flores Delta — Frontend Modular Infographic</title>
+<style>
+  :root {
+    --green: #22c55e;
+    --green-bg: #052e16;
+    --red: #ef4444;
+    --red-bg: #450a0a;
+    --yellow: #eab308;
+    --yellow-bg: #422006;
+    --blue: #3b82f6;
+    --blue-bg: #172554;
+    --purple: #a855f7;
+    --purple-bg: #3b0764;
+    --cyan: #06b6d4;
+    --cyan-bg: #083344;
+    --gray: #6b7280;
+    --dark: #0a0a0a;
+    --card: #1a1a2e;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #1e293b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f0f1a;
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #065f46 0%, #064e3b 50%, #0f0f1a 100%);
+    padding: 48px 20px 40px;
+    text-align: center;
+    border-bottom: 3px solid var(--green);
+  }
+  .header h1 { font-size: 2.4rem; color: var(--green); margin-bottom: 8px; }
+  .header .sub { color: var(--muted); max-width: 700px; margin: 0 auto; font-size: 0.95rem; }
+  .header .meta { color: #64748b; font-size: 0.8rem; margin-top: 6px; }
+  .header .badges { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .badge-red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple); }
+  .badge-cyan { background: var(--cyan-bg); color: var(--cyan); border: 1px solid var(--cyan); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+
+  /* ===== SECTION TITLE ===== */
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; margin: 48px 0 20px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title .count {
+    font-size: 0.85rem; font-weight: 400; background: var(--border);
+    padding: 2px 10px; border-radius: 12px;
+  }
+
+  /* ===== GRIDS ===== */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(540px, 1fr)); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover { border-color: #334155; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .card.full { grid-column: 1 / -1; }
+
+  .bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .bar-green { background: var(--green); }
+  .bar-red { background: var(--red); }
+  .bar-yellow { background: var(--yellow); }
+  .bar-blue { background: var(--blue); }
+  .bar-purple { background: var(--purple); }
+  .bar-cyan { background: var(--cyan); }
+  .bar-gray { background: var(--gray); }
+
+  .card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card h4 { font-size: 0.95rem; font-weight: 600; margin: 14px 0 6px; color: var(--green); }
+  .card .status-badge {
+    font-size: 0.7rem; font-weight: 600; padding: 2px 10px; border-radius: 10px;
+    margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .status-ok { background: var(--green-bg); color: var(--green); }
+  .status-missing { background: var(--red-bg); color: var(--red); }
+  .status-partial { background: var(--yellow-bg); color: var(--yellow); }
+  .status-future { background: var(--blue-bg); color: var(--blue); }
+
+  .card p, .card li { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  .card ul { list-style: none; padding: 0; }
+  .card li { padding: 3px 0; padding-left: 20px; position: relative; }
+  .card li::before { content: "›"; position: absolute; left: 4px; color: var(--gray); font-weight: 700; }
+  .card li.ok::before { content: "✓"; color: var(--green); }
+  .card li.warn::before { content: "!"; color: var(--yellow); }
+  .card li.err::before { content: "✗"; color: var(--red); }
+
+  .card table { width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 10px; }
+  .card th, .card td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #1e293b; }
+  .card th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card td { color: #cbd5e1; }
+
+  /* ===== SUMMARY ROW ===== */
+  .summary-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin: 20px 0;
+  }
+  .summary-card {
+    background: var(--card); border-radius: 12px; padding: 20px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .summary-card .number { font-size: 2.2rem; font-weight: 800; }
+  .summary-card .label { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+  .num-green { color: var(--green); }
+  .num-red { color: var(--red); }
+  .num-yellow { color: var(--yellow); }
+  .num-gray { color: var(--gray); }
+  .num-blue { color: var(--blue); }
+  .num-purple { color: var(--purple); }
+
+  /* ===== FLOW DIAGRAM ===== */
+  .flow-diagram {
+    background: var(--card); border-radius: 16px; padding: 24px;
+    border: 1px solid var(--border); margin: 20px 0;
+    overflow-x: auto;
+  }
+  .flow-diagram svg { width: 100%; min-width: 700px; }
+
+  .flow-arrow { fill: none; stroke: #334155; stroke-width: 2; }
+  .flow-arrow-green { stroke: var(--green); }
+  .flow-arrow-red { stroke: var(--red); }
+  .flow-arrow-yellow { stroke: var(--yellow); }
+  .flow-arrow-blue { stroke: var(--blue); }
+  .flow-box { fill: var(--card); stroke: var(--border); stroke-width: 1.5; rx: 8; }
+  .flow-box-green { fill: var(--green-bg); stroke: var(--green); }
+  .flow-box-red { fill: var(--red-bg); stroke: var(--red); }
+  .flow-box-yellow { fill: var(--yellow-bg); stroke: var(--yellow); }
+  .flow-box-blue { fill: var(--blue-bg); stroke: var(--blue); }
+  .flow-box-purple { fill: var(--purple-bg); stroke: var(--purple); }
+  .flow-box-cyan { fill: var(--cyan-bg); stroke: var(--cyan); }
+  .flow-text { fill: var(--text); font-size: 13px; font-weight: 600; }
+  .flow-sub { fill: var(--muted); font-size: 10px; }
+
+  /* ===== TAG ===== */
+  .tag {
+    display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px;
+    font-weight: 600; margin-right: 4px;
+  }
+  .tag-module { background: #1e3a5f; color: #60a5fa; }
+  .tag-sec { background: #3b1f1f; color: #f87171; }
+  .tag-scale { background: #1f3b1f; color: #4ade80; }
+  .tag-missing { background: #451a1a; color: #fca5a5; }
+
+  /* ===== PROGRESS BAR ===== */
+  .prog { margin: 10px 0; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+  .prog-bar { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .fill-green { background: var(--green); }
+  .fill-yellow { background: var(--yellow); }
+  .fill-red { background: var(--red); }
+
+  /* ===== MATRIX TABLE ===== */
+  .matrix { width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 12px; }
+  .matrix th, .matrix td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+  .matrix th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+  .matrix td { color: #cbd5e1; }
+  .matrix .threat { color: #fca5a5; font-weight: 500; }
+  .matrix .mitigation { color: #86efac; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot-green { background: var(--green); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-red { background: var(--red); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .header h1 { font-size: 1.5rem; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <h1>🏗️ Flores Delta — Frontend Modular</h1>
+  <p class="sub">Arquitectura modular, escalable y segura del frontend React + TypeScript.<br/>Backend: JWT HttpOnly · Roles GROWER/ADMIN/SUPER_ADMIN · Proxy próximamente</p>
+  <p class="meta">v1.0 · 11/05/2026 · docs/infografia-frontend-modular.html</p>
+  <div class="badges">
+    <span class="badge badge-green">✅ 9 Módulos funcionales</span>
+    <span class="badge badge-blue">🔷 12 Páginas</span>
+    <span class="badge badge-purple">🟣 ~110 Componentes</span>
+    <span class="badge badge-cyan">🔵 49 shadcn/ui</span>
+    <span class="badge badge-yellow">🟡 5 Puntos de mejora</span>
+    <span class="badge badge-red">❌ 0 Tests</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== RESUMEN ===== -->
+<h2 class="section-title">📊 Resumen del Frontend</h2>
+<div class="summary-row">
+  <div class="summary-card"><div class="number num-green">9</div><div class="label">Módulos principales</div></div>
+  <div class="summary-card"><div class="number num-green">12</div><div class="label">Páginas / Rutas</div></div>
+  <div class="summary-card"><div class="number num-purple">110</div><div class="label">Componentes totales</div></div>
+  <div class="summary-card"><div class="number num-cyan">49</div><div class="label">shadcn/ui atómicos</div></div>
+  <div class="summary-card"><div class="number num-green">6</div><div class="label">Schemas Zod</div></div>
+  <div class="summary-card"><div class="number num-yellow">40</div><div class="label">Deps producción</div></div>
+  <div class="summary-card"><div class="number num-gray">15k</div><div class="label">Líneas estimadas</div></div>
+  <div class="summary-card"><div class="number num-red">0</div><div class="label">Tests</div></div>
+</div>
+
+<!-- ===== ARQUITECTURA MODULAR ===== -->
+<h2 class="section-title">🧱 1. Arquitectura Modular — Diagrama de Capas</h2>
+<div class="flow-diagram">
+<svg viewBox="0 0 1000 580">
+  <!-- Legend -->
+  <rect x="20" y="10" width="12" height="12" rx="3" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1.5"/>
+  <text x="38" y="21" fill="#94a3b8" font-size="11">Implementado</text>
+  <rect x="140" y="10" width="12" height="12" rx="3" fill="var(--yellow-bg)" stroke="var(--yellow)" stroke-width="1.5"/>
+  <text x="158" y="21" fill="#94a3b8" font-size="11">Parcial / Mejorable</text>
+  <rect x="280" y="10" width="12" height="12" rx="3" fill="var(--red-bg)" stroke="var(--red)" stroke-width="1.5"/>
+  <text x="298" y="21" fill="#94a3b8" font-size="11">Ausente</text>
+
+  <!-- ===== LAYER 1: USER ===== -->
+  <text x="20" y="55" fill="#64748b" font-size="11" font-weight="600">🔵 CAPA USER</text>
+  <rect x="400" y="40" width="180" height="44" class="flow-box flow-box-green"/>
+  <text x="490" y="64" class="flow-text" text-anchor="middle">🌐 Browser Client</text>
+  <text x="490" y="78" class="flow-sub" text-anchor="middle">React SPA · Vite · SWC</text>
+
+  <!-- Arrow down -->
+  <line x1="490" y1="84" x2="490" y2="110" class="flow-arrow flow-arrow-green"/>
+  <polygon points="485,110 490,120 495,110" fill="#22c55e"/>
+
+  <!-- ===== LAYER 2: ROUTING ===== -->
+  <text x="20" y="115" fill="#64748b" font-size="11" font-weight="600">🧭 CAPA ROUTING</text>
+  <rect x="350" y="120" width="280" height="44" class="flow-box flow-box-green"/>
+  <text x="490" y="144" class="flow-text" text-anchor="middle">React Router DOM 6 + ProtectedRoute</text>
+  <text x="490" y="158" class="flow-sub" text-anchor="middle">12 rutas · 9 protegidas · v7 future flags</text>
+
+  <!-- Arrow -->
+  <line x1="490" y1="164" x2="490" y2="190" class="flow-arrow flow-arrow-green"/>
+  <polygon points="485,190 490,200 495,190" fill="#22c55e"/>
+
+  <!-- ===== LAYER 3: FEATURE MODULES ===== -->
+  <text x="20" y="200" fill="#64748b" font-size="11" font-weight="600">📦 CAPA FEATURES</text>
+
+  <rect x="50" y="210" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="120" y="234" class="flow-text" text-anchor="middle">🏠 Dashboard</text>
+
+  <rect x="210" y="210" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="280" y="234" class="flow-text" text-anchor="middle">🌱 Plants</text>
+
+  <rect x="370" y="210" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="440" y="234" class="flow-text" text-anchor="middle">🏠 Rooms</text>
+
+  <rect x="530" y="210" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="600" y="234" class="flow-text" text-anchor="middle">📋 Events</text>
+
+  <rect x="690" y="210" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="760" y="234" class="flow-text" text-anchor="middle">⚙️ Config</text>
+
+  <rect x="130" y="260" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="200" y="284" class="flow-text" text-anchor="middle">⭐ Favorites</text>
+
+  <rect x="290" y="260" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="360" y="284" class="flow-text" text-anchor="middle">👤 Profile</text>
+
+  <rect x="450" y="260" width="140" height="40" class="flow-box flow-box-green"/>
+  <text x="520" y="284" class="flow-text" text-anchor="middle">🌍 Landing</text>
+
+  <!-- Arrow from all features down -->
+  <line x1="490" y1="300" x2="490" y2="330" class="flow-arrow flow-arrow-green"/>
+  <polygon points="485,330 490,340 495,330" fill="#22c55e"/>
+
+  <!-- ===== LAYER 4: API + VALIDATION ===== -->
+  <text x="20" y="340" fill="#64748b" font-size="11" font-weight="600">🌐 CAPA API & VALIDATION</text>
+
+  <rect x="210" y="350" width="180" height="50" class="flow-box flow-box-green"/>
+  <text x="300" y="372" class="flow-text" text-anchor="middle">🌐 Axios Instance</text>
+  <text x="300" y="390" class="flow-sub" text-anchor="middle">withCredentials · interceptors</text>
+
+  <rect x="420" y="350" width="180" height="50" class="flow-box flow-box-green"/>
+  <text x="510" y="372" class="flow-text" text-anchor="middle">✅ Zod Validation</text>
+  <text x="510" y="390" class="flow-sub" text-anchor="middle">safeParse · validateResponse</text>
+
+  <rect x="630" y="350" width="160" height="50" class="flow-box flow-box-yellow"/>
+  <text x="710" y="372" class="flow-text" text-anchor="middle" fill="#fde047">⚠️ Sanitization</text>
+  <text x="710" y="390" class="flow-sub" text-anchor="middle">Parcial · falta DOMPurify</text>
+
+  <!-- Arrow -->
+  <line x1="490" y1="400" x2="490" y2="430" class="flow-arrow flow-arrow-green"/>
+  <polygon points="485,430 490,440 495,430" fill="#22c55e"/>
+
+  <!-- ===== LAYER 5: STATE ===== -->
+  <text x="20" y="440" fill="#64748b" font-size="11" font-weight="600">🗃️ CAPA STATE</text>
+
+  <rect x="130" y="450" width="160" height="50" class="flow-box flow-box-green"/>
+  <text x="210" y="472" class="flow-text" text-anchor="middle">🔄 React Query 5</text>
+  <text x="210" y="490" class="flow-sub" text-anchor="middle">Server State · Cache · 5min stale</text>
+
+  <rect x="320" y="450" width="160" height="50" class="flow-box flow-box-green"/>
+  <text x="400" y="472" class="flow-text" text-anchor="middle">⚡ Zustand 5</text>
+  <text x="400" y="490" class="flow-sub" text-anchor="middle">Client State · 2 stores</text>
+
+  <rect x="510" y="450" width="160" height="50" class="flow-box flow-box-green"/>
+  <text x="590" y="472" class="flow-text" text-anchor="middle">🔗 React Context</text>
+  <text x="590" y="490" class="flow-sub" text-anchor="middle">4 providers · Auth/Theme/Prod</text>
+
+  <!-- Arrow -->
+  <line x1="490" y1="500" x2="490" y2="530" class="flow-arrow flow-arrow-green"/>
+  <polygon points="485,530 490,540 495,530" fill="#22c55e"/>
+
+  <!-- ===== LAYER 6: BACKEND ===== -->
+  <text x="20" y="545" fill="#64748b" font-size="11" font-weight="600">☕ CAPA BACKEND</text>
+  <rect x="350" y="540" width="280" height="36" class="flow-box flow-box-blue"/>
+  <text x="490" y="562" class="flow-text" text-anchor="middle" fill="#60a5fa">Backend Java :8080 · JWT HttpOnly Cookie</text>
+</svg>
+</div>
+
+<!-- ===== MODULES CATALOG ===== -->
+<h2 class="section-title">📦 2. Catálogo de Módulos</h2>
+
+<div class="grid-2">
+
+<!-- MODULE: Auth & Security -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🔐 Auth & Security <span class="status-badge status-ok">✅ Implementado</span></h3>
+  <p><strong>Archivos:</strong> AuthContext.tsx, authService.ts, ProtectedRoute.tsx</p>
+  <h4>Responsabilidad</h4>
+  <ul>
+    <li class="ok">Manejar sesión del usuario (login/logout con useReducer)</li>
+    <li class="ok">JWT en cookie HttpOnly — NO almacenado en JS</li>
+    <li class="ok">Sincronización multi-tab via BroadcastChannel</li>
+    <li class="ok">Protección de rutas con ProtectedRoute wrapper</li>
+    <li class="ok">Interceptor 401 → logout automático global</li>
+  </ul>
+  <h4>Escalabilidad</h4>
+  <ul>
+    <li class="ok">Patrón useReducer permite agregar MFA, 2FA pending, etc.</li>
+    <li class="ok">BroadcastChannel escala a N pestañas</li>
+    <li class="warn">Falta: Role-based route guards (GROWER / ADMIN)</li>
+    <li class="warn">Falta: Refresh token rotation</li>
+  </ul>
+  <h4>Diagrama de Flujo</h4>
+  <svg width="100%" height="80" viewBox="0 0 460 80">
+    <rect x="5" y="15" width="80" height="36" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1.5"/>
+    <text x="45" y="38" fill="#e2e8f0" font-size="10" text-anchor="middle" font-weight="600">Login</text>
+    <line x1="85" y1="33" x2="110" y2="33" stroke="#22c55e" stroke-width="1.5"/>
+    <polygon points="108,28 118,33 108,38" fill="#22c55e"/>
+    <rect x="118" y="15" width="100" height="36" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1.5"/>
+    <text x="168" y="38" fill="#e2e8f0" font-size="10" text-anchor="middle" font-weight="600">POST /login</text>
+    <line x1="218" y1="33" x2="243" y2="33" stroke="#22c55e" stroke-width="1.5"/>
+    <polygon points="241,28 251,33 241,38" fill="#22c55e"/>
+    <rect x="251" y="15" width="100" height="36" rx="6" fill="var(--cyan-bg)" stroke="var(--cyan)" stroke-width="1.5"/>
+    <text x="301" y="38" fill="#e2e8f0" font-size="10" text-anchor="middle" font-weight="600">JWT Cookie</text>
+    <line x1="351" y1="33" x2="376" y2="33" stroke="#06b6d4" stroke-width="1.5"/>
+    <polygon points="374,28 384,33 374,38" fill="#06b6d4"/>
+    <rect x="384" y="15" width="70" height="36" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1.5"/>
+    <text x="419" y="38" fill="#e2e8f0" font-size="10" text-anchor="middle" font-weight="600">Zod ✓</text>
+  </svg>
+</div>
+
+<!-- MODULE: API Layer -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🌐 API Layer <span class="status-badge status-ok">✅ Implementado</span></h3>
+  <p><strong>Archivos:</strong> Utils/api.ts, services/api.ts, config/api.config.ts</p>
+  <h4>Responsabilidad</h4>
+  <ul>
+    <li class="ok">Instancia única de Axios con withCredentials: true</li>
+    <li class="ok">Interceptor 401 → logout automático</li>
+    <li class="ok">Interceptor error Zod → toast visual al usuario</li>
+    <li class="ok">CRUD completo para plantas, salas, cepas, nutrientes, usuarios, eventos</li>
+  </ul>
+  <h4>Cobertura de Endpoints</h4>
+  <table>
+    <tr><th>Recurso</th><th>CRUD</th><th>Zod</th></tr>
+    <tr><td>🌱 Plantas</td><td>GET/POST/PUT/DELETE</td><td>✅</td></tr>
+    <tr><td>🏠 Salas</td><td>GET/POST/PUT/DELETE</td><td>✅</td></tr>
+    <tr><td>🧬 Cepas</td><td>GET/POST/PUT/DELETE</td><td>✅</td></tr>
+    <tr><td>🧪 Nutrientes</td><td>GET/POST/PUT/DELETE</td><td>✅</td></tr>
+    <tr><td>👤 Usuarios</td><td>GET</td><td>✅</td></tr>
+    <tr><td>📋 Eventos</td><td>GET/POST/PUT/DELETE</td><td style="color:#fca5a5">❌</td></tr>
+    <tr><td>⭐ Favoritos</td><td>POST/DELETE/GET</td><td style="color:#fca5a5">❌</td></tr>
+  </table>
+</div>
+
+<!-- MODULE: Validation & Sanitization -->
+<div class="card">
+  <div class="bar bar-yellow"></div>
+  <h3>✅ Validation & Sanitization <span class="status-badge status-partial">🟡 Parcial</span></h3>
+  <p><strong>Archivos:</strong> schemas/DTOSchemas.ts, Utils/validationHelper.ts, interfaces/Eventos.ts</p>
+  <h4>Sanitización Actual</h4>
+  <table>
+    <tr><th>Punto de entrada</th><th>Sanitización</th><th>Estado</th></tr>
+    <tr><td>Formularios</td><td>Zod resolver + react-hook-form</td><td><span class="dot dot-green"></span>✅</td></tr>
+    <tr><td>Respuestas GET backend</td><td>Zod safeParse</td><td><span class="dot dot-green"></span>✅</td></tr>
+    <tr><td>Respuestas POST/PUT</td><td>validateResponse genérico</td><td><span class="dot dot-green"></span>✅</td></tr>
+    <tr><td>URLs de medios</td><td>buildMediaUrl()</td><td><span class="dot dot-green"></span>✅</td></tr>
+    <tr><td>User input búsqueda</td><td>Query params básico</td><td><span class="dot dot-yellow"></span>⚠️</td></tr>
+    <tr><td>Rich text / HTML</td><td>No implementado</td><td><span class="dot dot-red"></span>❌</td></tr>
+    <tr><td>DOMPurify</td><td>No implementado</td><td><span class="dot dot-red"></span>❌</td></tr>
+  </table>
+  <div class="prog">
+    <div class="prog-label"><span>Sanitización general</span><span>65%</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-yellow" style="width:65%"></div></div>
+  </div>
+</div>
+
+<!-- MODULE: State Management -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🗃️ State Management <span class="status-badge status-ok">✅ Implementado</span></h3>
+  <p><strong>Estrategia:</strong> 3 capas de estado</p>
+  <h4>Distribución</h4>
+  <table>
+    <tr><th>Capa</th><th>Tecnología</th><th>Propósito</th></tr>
+    <tr><td>🔄 Server State</td><td>TanStack Query 5</td><td>Datos del backend con staleTime 5min</td></tr>
+    <tr><td>⚡ Client State</td><td>Zustand 5</td><td>Plant selection + DirectAccess menu</td></tr>
+    <tr><td>🔗 Global Context</td><td>React Context</td><td>Auth, Theme, Snackbar, Product</td></tr>
+  </table>
+  <h4>Escalabilidad</h4>
+  <ul>
+    <li class="ok">React Query maneja caché, refetch, optimistic updates</li>
+    <li class="ok">Zustand sin boilerplate, selectors eficientes</li>
+    <li class="warn">Si crece migrar Context → Zustand para evitar re-renders</li>
+  </ul>
+</div>
+
+<!-- MODULE: Feature Modules -->
+<div class="card full">
+  <div class="bar bar-green"></div>
+  <h3>📦 Feature Modules Dashboard <span class="status-badge status-ok">✅ 8 Features</span></h3>
+  <div class="grid-4" style="margin-top:12px">
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">🏠 Dashboard</div>
+      <div style="font-size:0.78rem;color:var(--muted)">KPIs · Charts · Diary · Sidebar</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">🌱 Plants</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Grid · Detail · Timeline · Edit</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">🏠 Rooms</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Salas · Detail · Asociación</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">📋 Events</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Global Log · Filters · Timeline</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">⚙️ Config Panel</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Genéticas · Salas · Nutrientes · Users</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">⭐ Favorites</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Starred plants · Reusa PlantCard</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">🌍 Landing</div>
+      <div style="font-size:0.78rem;color:var(--muted)">Hero · Features · Blog · Contact</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;border-left:3px solid var(--green)">
+      <div style="font-size:1.2rem;margin-bottom:4px">👤 Profile</div>
+      <div style="font-size:0.78rem;color:var(--muted)">User profile page</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE: Routing -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🧭 Routing Module <span class="status-badge status-ok">✅ 12 Rutas</span></h3>
+  <table>
+    <tr><th>Ruta</th><th>Página</th><th>Protegida</th></tr>
+    <tr><td><code style="color:#60a5fa">/</code></td><td>Login</td><td style="color:#94a3b8">—</td></tr>
+    <tr><td><code style="color:#60a5fa">/login</code></td><td>Login</td><td style="color:#94a3b8">—</td></tr>
+    <tr><td><code style="color:#60a5fa">/dashboard</code></td><td>Dashboard</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/plantas</code></td><td>PlantasPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/plant/:id</code></td><td>PlantDetailPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/plantas/:id/editar</code></td><td>EditPlantPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/sala/:salaId</code></td><td>SalaDetailPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/bitacora-maestra</code></td><td>MainLogPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/configuracion</code></td><td>PanelControl</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/geneticas</code></td><td>→ PanelControl (tab)</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/profile</code></td><td>ProfilePage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">/favoritos</code></td><td>FavoritosPage</td><td>🔒</td></tr>
+    <tr><td><code style="color:#60a5fa">*</code></td><td>NotFound</td><td style="color:#94a3b8">—</td></tr>
+  </table>
+</div>
+
+<!-- MODULE: Hooks & Metrics -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🪝 Hooks & Metrics <span class="status-badge status-ok">✅ 10+ Hooks</span></h3>
+  <h4>Métricas Disponibles</h4>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+    <div style="background:#1e293b;border-radius:8px;padding:10px;border-left:2px solid var(--green)">
+      <div style="font-size:0.85rem;font-weight:600">📊 Quality</div>
+      <div style="font-size:0.75rem;color:var(--muted)">Etapas · Finalización · Distribución</div>
+    </div>
+    <div style="background:#1e293b;border-radius:8px;padding:10px;border-left:2px solid var(--blue)">
+      <div style="font-size:0.85rem;font-weight:600">📈 Performance</div>
+      <div style="font-size:0.75rem;color:var(--muted)">Plantas/sala · Rendimiento · Eficiencia</div>
+    </div>
+    <div style="background:#1e293b;border-radius:8px;padding:10px;border-left:2px solid var(--yellow)">
+      <div style="font-size:0.85rem;font-weight:600">⏱ Temporal</div>
+      <div style="font-size:0.75rem;color:var(--muted)">Tiempo por etapa · Ciclo · Proyección</div>
+    </div>
+    <div style="background:#1e293b;border-radius:8px;padding:10px;border-left:2px solid var(--purple)">
+      <div style="font-size:0.85rem;font-weight:600">🔧 Operational</div>
+      <div style="font-size:0.75rem;color:var(--muted)">Eventos · Actividad semanal · Frecuencia</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE: UI Components -->
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>🎨 UI Components <span class="status-badge status-ok">✅ ~110 Comp.</span></h3>
+  <div class="prog">
+    <div class="prog-label"><span>shadcn/ui atómicos</span><span>49</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-green" style="width:45%"></div></div>
+  </div>
+  <div class="prog">
+    <div class="prog-label"><span>Domain components</span><span>~60</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-green" style="width:55%"></div></div>
+  </div>
+  <h4>Distribución por Carpeta</h4>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+    <span class="tag tag-module">ui/ 49</span>
+    <span class="tag tag-module">dashboard/ 9</span>
+    <span class="tag tag-module">landing/ 15</span>
+    <span class="tag tag-module">forms/ 18</span>
+    <span class="tag tag-module">plant/ 5</span>
+    <span class="tag tag-module">panel/ 4</span>
+    <span class="tag tag-module">navigation/ 1</span>
+    <span class="tag tag-module">events/ 1</span>
+    <span class="tag tag-module">bitacora/ 1</span>
+    <span class="tag tag-module">skeletons/</span>
+  </div>
+</div>
+
+</div><!-- end grid-2 -->
+
+<!-- ===== SEGURIDAD ===== -->
+<h2 class="section-title">🛡️ 3. Seguridad Frontend — Defensa en Capas</h2>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 1000 300">
+  <!-- CAPA 1 -->
+  <rect x="30" y="30" width="170" height="70" rx="8" class="flow-box flow-box-green"/>
+  <text x="115" y="60" class="flow-text" text-anchor="middle">🔵 CAPA 1</text>
+  <text x="115" y="78" class="flow-sub" text-anchor="middle">Transporte</text>
+  <text x="115" y="92" class="flow-sub" text-anchor="middle">HTTPS · Cookie HttpOnly + SameSite</text>
+
+  <line x1="200" y1="65" x2="240" y2="65" class="flow-arrow flow-arrow-green"/>
+  <polygon points="238,60 248,65 238,70" fill="#22c55e"/>
+
+  <!-- CAPA 2 -->
+  <rect x="248" y="30" width="170" height="70" rx="8" class="flow-box flow-box-green"/>
+  <text x="333" y="60" class="flow-text" text-anchor="middle">🟢 CAPA 2</text>
+  <text x="333" y="78" class="flow-sub" text-anchor="middle">Autenticación</text>
+  <text x="333" y="92" class="flow-sub" text-anchor="middle">POST /login · JWT Cookie · 401 → Logout</text>
+
+  <line x1="418" y1="65" x2="458" y2="65" class="flow-arrow flow-arrow-green"/>
+  <polygon points="456,60 466,65 456,70" fill="#22c55e"/>
+
+  <!-- CAPA 3 -->
+  <rect x="466" y="30" width="170" height="70" rx="8" class="flow-box flow-box-green"/>
+  <text x="551" y="60" class="flow-text" text-anchor="middle">🟡 CAPA 3</text>
+  <text x="551" y="78" class="flow-sub" text-anchor="middle">Validación</text>
+  <text x="551" y="92" class="flow-sub" text-anchor="middle">Zod safeParse · validateResponse · RHF</text>
+
+  <line x1="636" y1="65" x2="676" y2="65" class="flow-arrow flow-arrow-green"/>
+  <polygon points="674,60 684,65 674,70" fill="#22c55e"/>
+
+  <!-- CAPA 4 -->
+  <rect x="684" y="30" width="170" height="70" rx="8" class="flow-box flow-box-yellow"/>
+  <text x="769" y="60" class="flow-text" text-anchor="middle" fill="#fde047">🟠 CAPA 4</text>
+  <text x="769" y="78" class="flow-sub" text-anchor="middle">Autorización</text>
+  <text x="769" y="92" class="flow-sub" text-anchor="middle">Roles backend · Falta: route guards</text>
+
+  <line x1="854" y1="65" x2="894" y2="65" class="flow-arrow flow-arrow-yellow"/>
+  <polygon points="892,60 902,65 892,70" fill="#eab308"/>
+
+  <!-- CAPA 5 -->
+  <rect x="902" y="30" width="170" height="70" rx="8" class="flow-box flow-box-red"/>
+  <text x="987" y="60" class="flow-text" text-anchor="middle" fill="#fca5a5">🔴 CAPA 5</text>
+  <text x="987" y="78" class="flow-sub" text-anchor="middle">Sanitización</text>
+  <text x="987" y="92" class="flow-sub" text-anchor="middle">Falta: CSP · DOMPurify</text>
+
+  <!-- ROW 2: Threat badges -->
+  <rect x="30" y="140" width="170" height="50" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1" stroke-dasharray="4"/>
+  <text x="115" y="162" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ XSS: React escapa output</text>
+  <text x="115" y="178" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ CSRF: Cookie SameSite</text>
+
+  <rect x="248" y="140" width="170" height="50" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1" stroke-dasharray="4"/>
+  <text x="333" y="162" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ JWT en HttpOnly cookie</text>
+  <text x="333" y="178" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ 401 global interceptor</text>
+
+  <rect x="466" y="140" width="170" height="50" rx="6" fill="var(--green-bg)" stroke="var(--green)" stroke-width="1" stroke-dasharray="4"/>
+  <text x="551" y="162" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ Zod runtime validation</text>
+  <text x="551" y="178" fill="#86efac" font-size="11" text-anchor="middle" font-weight="600">✅ RHF + Zod forms</text>
+
+  <rect x="684" y="140" width="170" height="50" rx="6" fill="var(--yellow-bg)" stroke="var(--yellow)" stroke-width="1" stroke-dasharray="4"/>
+  <text x="769" y="162" fill="#fde047" font-size="11" text-anchor="middle" font-weight="600">⚠️ Roles en backend</text>
+  <text x="769" y="178" fill="#fde047" font-size="11" text-anchor="middle" font-weight="600">⚠️ Falta guards frontend</text>
+
+  <rect x="902" y="140" width="170" height="50" rx="6" fill="var(--red-bg)" stroke="var(--red)" stroke-width="1" stroke-dasharray="4"/>
+  <text x="987" y="162" fill="#fca5a5" font-size="11" text-anchor="middle" font-weight="600">❌ No CSP headers</text>
+  <text x="987" y="178" fill="#fca5a5" font-size="11" text-anchor="middle" font-weight="600">❌ No DOMPurify</text>
+
+  <!-- ROW 3: Summary -->
+  <rect x="30" y="220" width="1040" height="40" rx="6" fill="var(--card)" stroke="var(--border)" stroke-width="1"/>
+  <text x="550" y="245" fill="#94a3b8" font-size="12" text-anchor="middle">🛡️ 3/5 capas completamente implementadas · 1 parcial · 1 ausente</text>
+</svg>
+</div>
+
+<h2 class="section-title" style="margin-top:30px">📋 Matriz de Amenazas</h2>
+<table class="matrix">
+  <tr><th>Amenaza</th><th>Mitigación Actual</th><th style="text-align:center">Estado</th></tr>
+  <tr>
+    <td class="threat">XSS (Cross-Site Scripting)</td>
+    <td class="mitigation">React escapa output por defecto · Sin dangerouslySetInnerHTML</td>
+    <td style="text-align:center"><span class="dot dot-green"></span>🟢 Bueno</td>
+  </tr>
+  <tr>
+    <td class="threat">XSS en rich text</td>
+    <td class="mitigation">No hay rich text inputs aún — preparar DOMPurify</td>
+    <td style="text-align:center"><span class="dot dot-yellow"></span>🟡 Preparar</td>
+  </tr>
+  <tr>
+    <td class="threat">JWT robado (XSS)</td>
+    <td class="mitigation">JWT en HttpOnly cookie — inaccesible desde JS</td>
+    <td style="text-align:center"><span class="dot dot-green"></span>🟢 Excelente</td>
+  </tr>
+  <tr>
+    <td class="threat">CSRF</td>
+    <td class="mitigation">Cookie SameSite + withCredentials</td>
+    <td style="text-align:center"><span class="dot dot-green"></span>🟢 Bueno</td>
+  </tr>
+  <tr>
+    <td class="threat">Man-in-the-Middle</td>
+    <td class="mitigation">HTTPS (asumido en producción)</td>
+    <td style="text-align:center"><span class="dot dot-green"></span>🟢 Estándar</td>
+  </tr>
+  <tr>
+    <td class="threat">Inyección en queries</td>
+    <td class="mitigation">Zod valida tipos en requests salientes</td>
+    <td style="text-align:center"><span class="dot dot-green"></span>🟢 Bueno</td>
+  </tr>
+  <tr>
+    <td class="threat">Session hijacking</td>
+    <td class="mitigation">Sin refresh token aún</td>
+    <td style="text-align:center"><span class="dot dot-yellow"></span>🟡 Mejorable</td>
+  </tr>
+  <tr>
+    <td class="threat">Clickjacking</td>
+    <td class="mitigation">Sin frame-ancestors CSP aún</td>
+    <td style="text-align:center"><span class="dot dot-red"></span>🔴 Ausente</td>
+  </tr>
+</table>
+
+<!-- ===== ESCALABILIDAD ===== -->
+<h2 class="section-title">📈 4. Escalabilidad — Hoja de Ruta</h2>
+
+<div class="grid-3">
+
+<div class="card">
+  <div class="bar bar-green"></div>
+  <h3>➕ Agregar Features</h3>
+  <div class="prog">
+    <div class="prog-label"><span>Madurez actual</span><span>75%</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-green" style="width:75%"></div></div>
+  </div>
+  <ul>
+    <li class="ok">Feature nueva = crear módulo en Components/ + Page</li>
+    <li class="ok">React Query = cache + dedup automático</li>
+    <li class="ok">Zustand = estado global sin fricción</li>
+    <li class="warn">Falta: lazy loading con React.lazy() + Suspense</li>
+    <li class="warn">Falta: code splitting por ruta</li>
+    <li class="warn">Falta: bundle analyzer</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="bar bar-yellow"></div>
+  <h3>👥 Escalar el Equipo</h3>
+  <div class="prog">
+    <div class="prog-label"><span>Madurez actual</span><span>40%</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-yellow" style="width:40%"></div></div>
+  </div>
+  <table>
+    <tr><th>Aspecto</th><th>Estado</th><th>Prioridad</th></tr>
+    <tr><td>TypeScript strict</td><td style="color:#fca5a5">❌ No</td><td>🔴 Alta</td></tr>
+    <tr><td>Tests</td><td style="color:#fca5a5">❌ No</td><td>🔴 Alta</td></tr>
+    <tr><td>Storybook</td><td style="color:#fca5a5">❌ No</td><td>🟡 Media</td></tr>
+    <tr><td>API contracts</td><td style="color:#86efac">✅ Zod</td><td>🟢 Hecho</td></tr>
+    <tr><td>Monorepo tooling</td><td style="color:#fca5a5">❌ No</td><td>🟡 Media</td></tr>
+    <tr><td>Linting estricto</td><td style="color:#fde047">⚠️ Básico</td><td>🟡 Media</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="bar bar-red"></div>
+  <h3>🔐 Escalar Seguridad</h3>
+  <div class="prog">
+    <div class="prog-label"><span>Madurez actual</span><span>60%</span></div>
+    <div class="prog-bar"><div class="prog-fill fill-yellow" style="width:60%"></div></div>
+  </div>
+  <h4>AHORA ✅</h4>
+  <ul>
+    <li class="ok">JWT HttpOnly cookie</li>
+    <li class="ok">Zod validation runtime</li>
+    <li class="ok">ProtectedRoute + 401 interceptor</li>
+  </ul>
+  <h4>PRÓXIMO SPRINT 🟡</h4>
+  <ul>
+    <li class="warn">Role-based route guards</li>
+    <li class="warn">CSP Headers en nginx.conf</li>
+    <li class="warn">Refresh token rotation</li>
+  </ul>
+  <h4>FUTURO 🔴</h4>
+  <ul>
+    <li class="err">DOMPurify integration</li>
+    <li class="err">Rate limiting client-side</li>
+    <li class="err">Security headers audit</li>
+  </ul>
+</div>
+
+</div>
+
+<!-- ===== HEALTH CHECK ===== -->
+<h2 class="section-title">📊 5. Health Check</h2>
+
+<div class="grid-3">
+  <div class="card"><div class="bar bar-green"></div><h3>✅ Buen Estado</h3>
+    <ul>
+      <li class="ok">Separación de módulos clara y por dominio</li>
+      <li class="ok">Arquitectura Backend-First con Zod como fuente de verdad</li>
+      <li class="ok">Autenticación JWT HttpCookie (no accesible desde JS)</li>
+      <li class="ok">Estado global mínimo y bien estratificado</li>
+      <li class="ok">Componentes reusables shadcn/ui + composición por dominio</li>
+    </ul>
+  </div>
+  <div class="card"><div class="bar bar-yellow"></div><h3>🟡 Atención Media</h3>
+    <ul>
+      <li class="warn">TypeScript laxo (strictNullChecks: false, noImplicitAny: false)</li>
+      <li class="warn">Sin CSP headers ni DOMPurify</li>
+      <li class="warn">Sin code splitting ni lazy loading</li>
+      <li class="warn">Eventos sin validación Zod</li>
+      <li class="warn">ProductContext.jsx en medio de todo TypeScript</li>
+    </ul>
+  </div>
+  <div class="card"><div class="bar bar-red"></div><h3>🔴 Riesgo Alto</h3>
+    <ul>
+      <li class="err">Cero tests — sin Vitest, Playwright, ni Testing Library</li>
+      <li class="err">Datos de cultivo sin validación automatizada</li>
+      <li class="err">Sin seguridad de contenido (Content Security Policy)</li>
+      <li class="err">Sin refresh token rotation</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== BACKEND DEPENDENCY ===== -->
+<h2 class="section-title">🔗 6. Dependencia con Backend</h2>
+<div class="flow-diagram">
+<svg viewBox="0 0 1000 160">
+  <rect x="30" y="30" width="200" height="60" rx="8" class="flow-box flow-box-green"/>
+  <text x="130" y="55" class="flow-text" text-anchor="middle">🌐 Frontend</text>
+  <text x="130" y="72" class="flow-sub" text-anchor="middle">React SPA · Axios · withCredentials</text>
+
+  <line x1="230" y1="60" x2="280" y2="60" class="flow-arrow flow-arrow-green"/>
+  <polygon points="278,55 288,60 278,65" fill="#22c55e"/>
+  
+  <!-- Contrato box -->
+  <rect x="288" y="20" width="140" height="80" rx="8" fill="var(--yellow-bg)" stroke="var(--yellow)" stroke-width="1.5" stroke-dasharray="5"/>
+  <text x="358" y="50" fill="#fde047" font-size="10" text-anchor="middle" font-weight="600">📜 CONTRATO</text>
+  <text x="358" y="66" fill="#fde047" font-size="9" text-anchor="middle">JWT Cookie</text>
+  <text x="358" y="80" fill="#fde047" font-size="9" text-anchor="middle">JSON API</text>
+  <text x="358" y="94" fill="#fde047" font-size="9" text-anchor="middle">Zod Schemas</text>
+
+  <line x1="428" y1="60" x2="478" y2="60" class="flow-arrow flow-arrow-green"/>
+  <polygon points="476,55 486,60 476,65" fill="#22c55e"/>
+
+  <rect x="486" y="30" width="200" height="60" rx="8" class="flow-box flow-box-blue"/>
+  <text x="586" y="55" class="flow-text" text-anchor="middle" fill="#60a5fa">☕ Backend :8080</text>
+  <text x="586" y="72" class="flow-sub" text-anchor="middle">Spring Boot · JWT · Roles · MinIO</text>
+
+  <line x1="686" y1="60" x2="726" y2="60" class="flow-arrow flow-arrow-yellow"/>
+  <polygon points="724,55 734,60 724,65" fill="#eab308"/>
+
+  <rect x="734" y="30" width="200" height="60" rx="8" class="flow-box flow-box-yellow"/>
+  <text x="834" y="55" class="flow-text" text-anchor="middle" fill="#fde047">🔮 Proxy (próximamente)</text>
+  <text x="834" y="72" class="flow-sub" text-anchor="middle">CSP · SSL · Rate Limit</text>
+</svg>
+</div>
+
+<div class="grid-2" style="margin-top:20px">
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>📤 Request Flow</h3>
+    <ul>
+      <li class="ok">Axios con withCredentials: true → cookie JWT se envía sola</li>
+      <li class="ok">Content-Type: application/json (o multipart/form-data para fotos)</li>
+      <li class="ok">URL base via VITE_API_URL = 12factor compliant</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>📥 Response Flow</h3>
+    <ul>
+      <li class="ok">Zod safeParse valida cada respuesta del backend</li>
+      <li class="ok">Si el contrato se rompe → error + toast al usuario + consola</li>
+      <li class="ok">HTTP 401 → logout automático global</li>
+      <li class="ok">validateResponse() genérico para mutaciones POST/PUT</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== CONCLUSIÓN ===== -->
+<h2 class="section-title">✅ 7. Conclusión</h2>
+<div class="grid-2">
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🏆 Fortalezas</h3>
+    <ul>
+      <li class="ok">Arquitectura modular real — folder-by-domain, no folder-by-type</li>
+      <li class="ok">Backend-First con validación runtime — detección temprana de contratos rotos</li>
+      <li class="ok">Auth security-first — JWT en HttpOnly cookie, sin localStorage</li>
+      <li class="ok">Estado bien estratificado — React Query + Zustand + Context</li>
+      <li class="ok">Componentes reusables — shadcn/ui + composición por dominio</li>
+      <li class="ok">Multi-tab sync con BroadcastChannel</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>⚠️ Debilidades a Abordar</h3>
+    <ul>
+      <li class="err"><strong>TypeScript laxo</strong> — strictNullChecks: false es una bomba de tiempo</li>
+      <li class="err"><strong>Cero tests</strong> — para datos de cultivo, es el riesgo #1</li>
+      <li class="err"><strong>Sin CSP ni DOMPurify</strong> — seguridad de contenido necesita atención</li>
+      <li class="err"><strong>Sin code splitting</strong> — bundle crece sin lazy loading</li>
+      <li class="err"><strong>Eventos sin validación Zod</strong> — schemas de eventos no cubiertos</li>
+      <li class="err"><strong>Sin role-based route guards</strong> — solo ProtectedRoute genérico</li>
+    </ul>
+  </div>
+</div>
+
+<div style="text-align:center;padding:40px 0 20px;color:#64748b;font-size:0.85rem;border-top:1px solid #1e293b;margin-top:40px">
+  <p>🏗️ Flores Delta Fullstack — Reporte Infográfico Frontend Modular · 11/05/2026</p>
+  <p style="font-size:0.75rem;margin-top:4px">React 18 · TypeScript · Vite 5 · Tailwind 3 · shadcn/ui · TanStack Query 5 · Zustand 5 · Zod 4</p>
+</div>
+
+</div><!-- end container -->
+
+</body>
+</html>

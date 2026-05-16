@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flores Delta — Infografía de Dependencias Faltantes</title>
+<style>
+  :root {
+    --green: #22c55e;
+    --green-bg: #052e16;
+    --red: #ef4444;
+    --red-bg: #450a0a;
+    --yellow: #eab308;
+    --yellow-bg: #422006;
+    --blue: #3b82f6;
+    --blue-bg: #172554;
+    --gray: #6b7280;
+    --dark: #0a0a0a;
+    --card: #1a1a2e;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f0f1a;
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, #065f46 0%, #064e3b 50%, #0f0f1a 100%);
+    padding: 40px 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--green);
+  }
+  .header h1 { font-size: 2.2rem; color: var(--green); margin-bottom: 8px; }
+  .header p { color: var(--muted); max-width: 700px; margin: 0 auto; }
+  .header .badges { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .header .badge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .badge-red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; margin: 40px 0 20px;
+    padding-bottom: 8px; border-bottom: 2px solid #1e293b;
+  }
+  .section-title .count {
+    font-size: 0.9rem; font-weight: 400; background: #1e293b;
+    padding: 2px 10px; border-radius: 12px; margin-left: 10px;
+  }
+
+  /* === CARD GRID === */
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 20px; }
+
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #1e293b;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover { border-color: #334155; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+
+  .card .bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .bar-green { background: var(--green); }
+  .bar-red { background: var(--red); }
+  .bar-yellow { background: var(--yellow); }
+  .bar-blue { background: var(--blue); }
+  .bar-gray { background: var(--gray); }
+
+  .card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card .status {
+    font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 10px;
+    margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .status-existing { background: var(--green-bg); color: var(--green); }
+  .status-missing { background: var(--red-bg); color: var(--red); }
+  .status-partial { background: var(--yellow-bg); color: var(--yellow); }
+  .status-future { background: var(--blue-bg); color: var(--blue); }
+  .status-dead { background: #1f1f1f; color: var(--gray); }
+
+  .card p, .card li { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+  .card ul { list-style: none; padding: 0; }
+  .card li { padding: 4px 0; padding-left: 20px; position: relative; }
+  .card li::before { content: "›"; position: absolute; left: 4px; color: var(--gray); font-weight: 700; }
+
+  .dep-list { margin-top: 12px; }
+  .dep-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    border-radius: 8px; font-size: 0.82rem; margin-bottom: 4px;
+  }
+  .dep-ok { background: rgba(34,197,94,0.1); color: #86efac; }
+  .dep-missing { background: rgba(239,68,68,0.1); color: #fca5a5; }
+  .dep-partial { background: rgba(234,179,8,0.1); color: #fde047; }
+
+  .flow-diagram {
+    background: var(--card); border-radius: 16px; padding: 24px;
+    border: 1px solid #1e293b; margin: 20px 0;
+    overflow-x: auto;
+  }
+  .flow-diagram svg { width: 100%; min-width: 700px; }
+
+  .tag {
+    display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 6px;
+    font-weight: 600; margin-right: 4px;
+  }
+  .tag-frontend { background: #1e3a5f; color: #60a5fa; }
+  .tag-backend { background: #3b1f1f; color: #f87171; }
+  .tag-doc { background: #1f3b1f; color: #4ade80; }
+  .tag-infra { background: #3b2f1f; color: #fbbf24; }
+  .tag-dead { background: #1f1f1f; color: #9ca3af; }
+
+  .summary-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin: 20px 0;
+  }
+  .summary-card {
+    background: var(--card); border-radius: 12px; padding: 20px; text-align: center;
+    border: 1px solid #1e293b;
+  }
+  .summary-card .number { font-size: 2.4rem; font-weight: 800; }
+  .summary-card .label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .num-green { color: var(--green); }
+  .num-red { color: var(--red); }
+  .num-yellow { color: var(--yellow); }
+  .num-gray { color: var(--gray); }
+
+  .service-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
+  }
+  .service-item {
+    background: var(--card); border-radius: 10px; padding: 16px;
+    border: 1px solid #1e293b; text-align: center;
+  }
+  .service-item .dot {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-bottom: 8px;
+  }
+  .dot-up { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot-down { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .service-item .name { font-size: 0.9rem; font-weight: 600; }
+  .service-item .detail { font-size: 0.75rem; color: var(--muted); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  .flow-arrow { fill: none; stroke: #334155; stroke-width: 2; }
+  .flow-arrow-green { stroke: var(--green); }
+  .flow-arrow-red { stroke: var(--red); }
+  .flow-arrow-yellow { stroke: var(--yellow); }
+  .flow-box { fill: var(--card); stroke: #1e293b; stroke-width: 1.5; rx: 8; }
+  .flow-box-green { fill: #052e16; stroke: var(--green); }
+  .flow-box-red { fill: #450a0a; stroke: var(--red); }
+  .flow-box-yellow { fill: #422006; stroke: var(--yellow); }
+  .flow-text { fill: var(--text); font-size: 13px; font-weight: 600; }
+  .flow-sub { fill: var(--muted); font-size: 10px; }
+
+  @media (max-width: 768px) {
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .header h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Flores Delta — Mapa de Dependencias Faltantes</h1>
+  <p>Infografía completa de features existentes, pendientes y código muerto en el frontend.<br>
+  Backend 100% funcional — NO MODIFICAR. Enfoque: estética frontend.</p>
+  <div class="badges">
+    <span class="badge badge-green">✅ 12 Funcionalidades existentes</span>
+    <span class="badge badge-red">❌ 8 Funcionalidades faltantes</span>
+    <span class="badge badge-yellow">🔶 5 Parcialmente implementadas</span>
+    <span class="badge badge-blue">🔷 ~25 Archivos de código muerto</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== SERVICIOS EN VIVO ===== -->
+<h2 class="section-title">🟢 Stack Actual — Servicios en Ejecución</h2>
+<div class="service-grid">
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">Frontend</div><div class="detail">localhost:8081 ✅</div></div>
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">Backend API</div><div class="detail">localhost:8080 ✅</div></div>
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">PostgreSQL</div><div class="detail">localhost:5432 ✅</div></div>
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">MinIO</div><div class="detail">localhost:9000 ✅</div></div>
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">MinIO Console</div><div class="detail">localhost:9001 ✅</div></div>
+  <div class="service-item"><div class="dot dot-up"></div><div class="name">Swagger API</div><div class="detail">/swagger-ui.html ✅</div></div>
+</div>
+
+<!-- ===== RESUMEN ===== -->
+<h2 class="section-title">📊 Resumen del Proyecto</h2>
+<div class="summary-row">
+  <div class="summary-card"><div class="number num-green">12</div><div class="label">Páginas/Rutas existentes</div></div>
+  <div class="summary-card"><div class="number num-red">8</div><div class="label">Features faltantes (PRD)</div></div>
+  <div class="summary-card"><div class="number num-yellow">5</div><div class="label">Features parciales</div></div>
+  <div class="summary-card"><div class="number num-gray">25</div><div class="label">Archivos código muerto</div></div>
+  <div class="summary-card"><div class="number num-green">49</div><div class="label">Componentes shadcn/ui</div></div>
+  <div class="summary-card"><div class="number num-red">0</div><div class="label">Tests unitarios frontend</div></div>
+</div>
+
+<!-- ===== DIAGRAMA DE FLUJO ===== -->
+<h2 class="section-title">🔀 Diagrama de Dependencias Funcionales</h2>
+<div class="flow-diagram">
+<svg viewBox="0 0 1000 420">
+  <!-- User Flow -->
+  <text x="20" y="30" fill="#94a3b8" font-size="11" font-weight="600">FLUJO DE USUARIO →</text>
+
+  <!-- Login -->
+  <rect x="20" y="50" width="140" height="50" class="flow-box flow-box-green"/>
+  <text x="90" y="78" class="flow-text" text-anchor="middle">🔐 Login</text>
+  <text x="90" y="93" class="flow-sub" text-anchor="middle">✅ Existente</text>
+
+  <!-- Arrow -->
+  <line x1="160" y1="75" x2="200" y2="75" class="flow-arrow flow-arrow-green"/>
+  <polygon points="200,70 215,75 200,80" fill="#22c55e"/>
+
+  <!-- Dashboard -->
+  <rect x="215" y="50" width="140" height="50" class="flow-box flow-box-green"/>
+  <text x="285" y="78" class="flow-text" text-anchor="middle">🏠 Dashboard</text>
+  <text x="285" y="93" class="flow-sub" text-anchor="middle">✅ Existente</text>
+
+  <!-- Branches from Dashboard -->
+  <line x1="355" y1="75" x2="395" y2="75" class="flow-arrow flow-arrow-green"/>
+  <polygon points="395,70 410,75 395,80" fill="#22c55e"/>
+
+  <!-- Branch: to plantas -->
+  <rect x="410" y="30" width="140" height="50" class="flow-box flow-box-yellow"/>
+  <text x="480" y="58" class="flow-text" text-anchor="middle">🌱 Plantas</text>
+  <text x="480" y="73" class="flow-sub" text-anchor="middle">🔶 Sin orden alfabético</text>
+
+  <line x1="410" y1="80" x2="395" y2="80" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="395" y1="80" x2="395" y2="120" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="395" y1="120" x2="410" y2="120" class="flow-arrow flow-arrow-yellow"/>
+  <polygon points="410,115 425,120 410,125" fill="#eab308"/>
+
+  <!-- Salas -->
+  <rect x="425" y="100" width="140" height="50" class="flow-box flow-box-green"/>
+  <text x="495" y="128" class="flow-text" text-anchor="middle">🏠 Salas</text>
+  <text x="495" y="143" class="flow-sub" text-anchor="middle">✅ Carrusel ok</text>
+
+  <!-- Bitácora -->
+  <line x1="355" y1="95" x2="355" y2="180" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="355" y1="180" x2="410" y2="180" class="flow-arrow flow-arrow-red"/>
+  <polygon points="410,175 425,180 410,185" fill="#ef4444"/>
+
+  <rect x="425" y="155" width="140" height="50" class="flow-box flow-box-red"/>
+  <text x="495" y="183" class="flow-text" text-anchor="middle">📝 Bitácora</text>
+  <text x="495" y="198" class="flow-sub" text-anchor="middle">❌ Filtros rotos</text>
+
+  <!-- Settings -->
+  <line x1="355" y1="75" x2="395" y2="75" class="flow-arrow"/>
+  <line x1="410" y1="75" x2="440" y2="75" class="flow-arrow flow-arrow-green"/>
+  <line x1="355" y1="95" x2="355" y2="250" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="355" y1="250" x2="410" y2="250" class="flow-arrow flow-arrow-green"/>
+  <polygon points="410,245 425,250 410,255" fill="#22c55e"/>
+
+  <rect x="425" y="225" width="140" height="50" class="flow-box flow-box-green"/>
+  <text x="495" y="253" class="flow-text" text-anchor="middle">⚙️ Panel Control</text>
+  <text x="495" y="268" class="flow-sub" text-anchor="middle">✅ Salas/Cepas/Nutri</text>
+
+  <!-- Favoritos -->
+  <rect x="410" y="290" width="140" height="50" class="flow-box flow-box-green"/>
+  <text x="480" y="318" class="flow-text" text-anchor="middle">⭐ Favoritos</text>
+  <text x="480" y="333" class="flow-sub" text-anchor="middle">✅ Existente</text>
+
+  <line x1="355" y1="250" x2="380" y2="250" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="380" y1="250" x2="380" y2="315" class="flow-arrow" stroke="#334155" stroke-width="1.5"/>
+  <line x1="380" y1="315" x2="410" y2="315" class="flow-arrow flow-arrow-green"/>
+  <polygon points="410,310 425,315 410,320" fill="#22c55e"/>
+
+  <!-- ===== RIGHT SIDE: MISSING FEATURES ===== -->
+  <rect x="690" y="30" width="180" height="50" class="flow-box flow-box-red"/>
+  <text x="780" y="58" class="flow-text" text-anchor="middle" fill="#ef4444">❌ Nutrientes Masivos</text>
+  <text x="780" y="73" class="flow-sub" text-anchor="middle">Sala → Checkbox múltiple</text>
+
+  <rect x="690" y="100" width="180" height="50" class="flow-box flow-box-red"/>
+  <text x="780" y="128" class="flow-text" text-anchor="middle" fill="#ef4444">❌ Nota Multimedia</text>
+  <text x="780" y="143" class="flow-sub" text-anchor="middle">Audio + Texto + Imagen</text>
+
+  <rect x="690" y="170" width="180" height="50" class="flow-box flow-box-red"/>
+  <text x="780" y="198" class="flow-text" text-anchor="middle" fill="#ef4444">❌ Timeline Growdiaries</text>
+  <text x="780" y="213" class="flow-sub" text-anchor="middle">Línea temporal visual</text>
+
+  <rect x="690" y="240" width="180" height="50" class="flow-box flow-box-red"/>
+  <text x="780" y="268" class="flow-text" text-anchor="middle" fill="#ef4444">❌ Métricas/KPIs</text>
+  <text x="780" y="283" class="flow-sub" text-anchor="middle">Gráficos semanales BI</text>
+
+  <rect x="690" y="310" width="180" height="50" class="flow-box flow-box-yellow"/>
+  <text x="780" y="338" class="flow-text" text-anchor="middle" fill="#eab308">🔶 Export CSV</text>
+  <text x="780" y="353" class="flow-sub" text-anchor="middle">Existe pero sin filtros</text>
+
+  <!-- Connectors from current to missing -->
+  <line x1="565" y1="55" x2="600" y2="55" class="flow-arrow" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="600" y1="55" x2="600" y2="55" class="flow-arrow" stroke="#334155" stroke-width="1"/>
+  <line x1="600" y1="55" x2="690" y2="55" class="flow-arrow flow-arrow-red" stroke-dasharray="6,3"/>
+  <polygon points="690,50 705,55 690,60" fill="#ef4444"/>
+
+  <line x1="565" y1="125" x2="600" y2="125" class="flow-arrow" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="600" y1="125" x2="690" y2="125" class="flow-arrow flow-arrow-red" stroke-dasharray="6,3"/>
+  <polygon points="690,120 705,125 690,130" fill="#ef4444"/>
+
+  <line x1="565" y1="195" x2="600" y2="195" class="flow-arrow" stroke="#334155" stroke-width="1" stroke-dasharray="4"/>
+  <line x1="600" y1="195" x2="690" y2="195" class="flow-arrow flow-arrow-red" stroke-dasharray="6,3"/>
+  <polygon points="690,190 705,195 690,200" fill="#ef4444"/>
+
+  <!-- Legend -->
+  <text x="200" y="400" fill="#94a3b8" font-size="11">Referencias:</text>
+  <rect x="320" y="388" width="14" height="14" rx="3" class="flow-box-green" stroke="#22c55e"/>
+  <text x="340" y="400" fill="#86efac" font-size="11">Existente</text>
+  <rect x="420" y="388" width="14" height="14" rx="3" class="flow-box-red" stroke="#ef4444"/>
+  <text x="440" y="400" fill="#fca5a5" font-size="11">Faltante/Roto</text>
+  <rect x="530" y="388" width="14" height="14" rx="3" class="flow-box-yellow" stroke="#eab308"/>
+  <text x="550" y="400" fill="#fde047" font-size="11">Parcial</text>
+  <line x1="630" y1="395" x2="670" y2="395" class="flow-arrow flow-arrow-red" stroke-dasharray="6,3"/>
+  <text x="680" y="400" fill="#fca5a5" font-size="11">Dependencia faltante</text>
+</svg>
+</div>
+
+<!-- ===== FEATURES EXISTENTES ===== -->
+<h2 class="section-title">✅ Funcionalidades Existentes <span class="count">12</span></h2>
+<div class="grid-3">
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🔐 Autenticación JWT <span class="status status-existing">OK</span></h3>
+    <p>Login con HttpOnly cookies, logout, ProtectedRoute, auto-logout en 401.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ BroadcastChannel multi-tab sync</div>
+      <div class="dep-item dep-ok">✅ AuthContext con useReducer</div>
+      <div class="dep-item dep-ok">✅ Interceptor 401 global</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🏠 Dashboard <span class="status status-existing">OK</span></h3>
+    <p>Página principal con carrusel de salas, calendario semanal, diario de usuario.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Carrusel de salas</div>
+      <div class="dep-item dep-ok">✅ WeeklyCalendarStrip</div>
+      <div class="dep-item dep-ok">✅ UserDiary timeline</div>
+      <div class="dep-item dep-ok">✅ Empty states con CTAs</div>
+      <div class="dep-item dep-ok">✅ Sidebar con navegación</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🌱 Gestión de Plantas <span class="status status-existing">OK</span></h3>
+    <p>CRUD completo, detalle con bitácora, edición, eliminación.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Create via formulario</div>
+      <div class="dep-item dep-ok">✅ PlantDetailPage con timeline</div>
+      <div class="dep-item dep-ok">✅ EditPlantPage</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🏗️ Gestión de Salas <span class="status status-existing">OK</span></h3>
+    <p>CRUD de salas con tipo de ambiente (INTERIOR/EXTERIOR).</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ SalaDetailPage</div>
+      <div class="dep-item dep-ok">✅ Carrusel en dashboard</div>
+      <div class="dep-item dep-ok">✅ Filtro por sala en UI</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🧬 Gestión de Genéticas <span class="status status-existing">OK</span></h3>
+    <p>CRUD de cepas con datos parentales, THC, CBD, dominancia.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Formulario en PanelControl</div>
+      <div class="dep-item dep-ok">✅ Selector en creación de planta</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>⚙️ Panel de Control <span class="status status-existing">OK</span></h3>
+    <p>Vista de administración centralizada con tabs.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Tabs: Salas, Genéticas, Nutrientes, Usuarios</div>
+      <div class="dep-item dep-ok">✅ CRUD completo desde panel</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>⭐ Favoritos <span class="status status-existing">OK</span></h3>
+    <p>Marcar/desmarcar plantas favoritas.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ FavoritosPage</div>
+      <div class="dep-item dep-ok">✅ API endpoints dedicados</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🎨 shadcn/ui Design System <span class="status status-existing">OK</span></h3>
+    <p>49 componentes de UI listos para usar.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Sidebar, tabs, diálogos, selects</div>
+      <div class="dep-item dep-ok">✅ Carousel, calendar, table</div>
+      <div class="dep-item dep-ok">✅ Toast/Sonner para feedback</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🔒 Seguridad <span class="status status-existing">OK</span></h3>
+    <p>JWT en HttpOnly cookies, CSRF protection, RBAC.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Roles: GROWER, ADMIN, SUPER_ADMIN</div>
+      <div class="dep-item dep-ok">✅ Logout server-side</div>
+      <div class="dep-item dep-ok">✅ Zod runtime validation</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FEATURES PARCIALES ===== -->
+<h2 class="section-title">🔶 Funcionalidades Parciales <span class="count">5</span></h2>
+<div class="grid-3">
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>📝 Bitácora de Eventos <span class="status status-partial">PARCIAL</span></h3>
+    <p>La UI envía filtros al backend, pero el backend los ignora. Filtros no funcionan.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Frontend manda query params</div>
+      <div class="dep-item dep-missing">❌ Backend no recibe @RequestParam — los ignora</div>
+      <div class="dep-item dep-missing">❌ Repository no tiene JOIN FETCH (N+1)</div>
+      <div class="dep-item dep-partial">🔶 Paginación cliente-side (no debería)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>📊 Dashboard — Métricas <span class="status status-partial">PARCIAL</span></h3>
+    <p>Hooks de métricas existen pero no están conectados a la UI principal.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Hooks: useOperationalMetrics, usePerformanceMetrics, useQualityMetrics, useTemporalMetrics</div>
+      <div class="dep-item dep-missing">❌ No hay visualización en Dashboard</div>
+      <div class="dep-item dep-partial">🔶 WeeklyActivityChart existe</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>🌱 Plantas — Orden Alfabético <span class="status status-partial">PARCIAL</span></h3>
+    <p>El PRD especifica orden alfabético dentro de salas. Pendiente verificar.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Frontend renderiza plantas</div>
+      <div class="dep-item dep-missing">❌ Falta sort alfabético en queries/view</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>📥 Exportar CSV <span class="status status-partial">PARCIAL</span></h3>
+    <p>Función de export existe pero los datos exportados no están filtrados (por el bug de filtros).</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Lógica de generación CSV implementada</div>
+      <div class="dep-item dep-missing">❌ Exporta datos sin filtrar (bug upstream)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>💧 Nutrientes <span class="status status-partial">PARCIAL</span></h3>
+    <p>CRUD de nutrientes funciona. La funcionalidad masiva NO.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ Catálogo de nutrientes funcional</div>
+      <div class="dep-item dep-ok">✅ MassNutrientForm component existe</div>
+      <div class="dep-item dep-missing">❌ Selección múltiple por sala no operativa</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FEATURES FALTANTES ===== -->
+<h2 class="section-title">❌ Funcionalidades Faltantes <span class="count">8</span></h2>
+<div class="grid-3">
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>🥦 Nutrientes Masivos por Sala <span class="status status-missing">FALTA</span></h3>
+    <p>Seleccionar Sala → checkbox "Seleccionar Todas" → aplicar nutriente a múltiples plantas.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Checkbox "Seleccionar Todas"</div>
+      <div class="dep-item dep-missing">❌ Integración Sala → selección múltiple</div>
+      <div class="dep-item dep-ok">✅ MassNutrientForm component existe (no usado)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>🎙️ Nota Multimedia <span class="status status-missing">FALTA</span></h3>
+    <p>Un solo evento Nota debe soportar: Audio/Voz + Texto + Imagen simultáneamente.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Grabación de audio en browser (MediaRecorder API)</div>
+      <div class="dep-item dep-missing">❌ Upload de audio a MinIO</div>
+      <div class="dep-item dep-missing">❌ Render de audio player en timeline</div>
+      <div class="dep-item dep-ok">✅ NoteForm existe (solo texto)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>📈 Timeline Visual "Growdiaries" <span class="status status-missing">FALTA</span></h3>
+    <p>Línea de tiempo visual con colores por etapa, badges, agrupación semanal.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Línea temporal vertical con etapas</div>
+      <div class="dep-item dep-missing">❌ Badges de etapa coloridos</div>
+      <div class="dep-item dep-ok">✅ PlantTimeline component existe (básico)</div>
+      <div class="dep-item dep-ok">✅ WeeklyEventLog existe</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>📊 Métricas BI — Dashboard <span class="status status-missing">FALTA</span></h3>
+    <p>Vista semanal con KPIs reales del backend, proyecciones en gráficos.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-ok">✅ 4 hooks de métricas existen</div>
+      <div class="dep-item dep-missing">❌ Integración visual en Dashboard</div>
+      <div class="dep-item dep-missing">❌ Endpoints de agregación en backend</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>🧪 Tests <span class="status status-missing">FALTA</span></h3>
+    <p>Cero tests en frontend. Un test de integración en backend (stale).</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Vitest + Testing Library no configurado</div>
+      <div class="dep-item dep-missing">❌ 0 tests unitarios frontend</div>
+      <div class="dep-item dep-missing">❌ 0 tests de integración backend funcional</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>🏗️ CI/CD Pipeline <span class="status status-missing">FALTA</span></h3>
+    <p>No hay GitHub Actions, linter automático, ni deploy automatizado.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Sin GitHub Actions</div>
+      <div class="dep-item dep-missing">❌ Sin lint automático en PRs</div>
+      <div class="dep-item dep-missing">❌ Sin deploy automático</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>📱 Lazy Loading / Code Splitting <span class="status status-missing">FALTA</span></h3>
+    <p>Todas las páginas se cargan en un bundle. Sin React.lazy().</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ React.lazy() no implementado</div>
+      <div class="dep-item dep-missing">❌ Sin route-based code splitting</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>🔄 Filtrado Backend (Bitácora) <span class="status status-missing">FALTA</span></h3>
+    <p>UnifiedEventController debe aceptar @RequestParam para filtrar eventos.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Backend ignora query params</div>
+      <div class="dep-item dep-missing">❌ Falta criteria query en repository</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CÓDIGO MUERTO ===== -->
+<h2 class="section-title">💀 Código Muerto — Eliminable <span class="count">25 archivos</span></h2>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>📄 HTMLs de Debug <span class="status status-dead">3 archivos</span></h3>
+    <ul>
+      <li><code>debug-auth.html</code> (136 líneas) — Login inseguro, guarda JWT en sessionStorage</li>
+      <li><code>verificar_localstorage.html</code> (194 líneas) — Verificación de seguridad</li>
+    </ul>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ 0 referencias desde React</div>
+      <div class="dep-item dep-missing">❌ debug-auth.html expone vulnerabilidad (guarda JWT en storage)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>📜 Scripts PowerShell <span class="status status-dead">2 archivos</span></h3>
+    <ul>
+      <li><code>fix-planttimeline-url.ps1</code> (15 líneas) — Fix URL hardcodeada (ya aplicado)</li>
+      <li><code>clear_localstorage.ps1</code> (44 líneas) — Instrucciones limpiar caché</li>
+    </ul>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Solo Windows, 0 referencias</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>🧩 Componentes sin uso <span class="status status-dead">7 componentes</span></h3>
+    <ul>
+      <li><code>TestDialog.tsx</code> — Test de shadcn Dialog, console.log en render</li>
+      <li><code>BatchConfirmDialog.tsx</code> — Confirmación batch</li>
+      <li><code>DirectAccessButton.tsx</code> — Botón de acceso directo</li>
+      <li><code>PlantSelectableChip.tsx</code> — Chip seleccionable de planta</li>
+      <li><code>StageChangeForm.tsx</code> — Formulario de cambio de etapa</li>
+      <li><code>EventTableSkeleton.tsx</code> — Skeleton de tabla</li>
+      <li><code>PlantCardSkeleton.tsx</code> — Skeleton de card</li>
+    </ul>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Ninguno tiene imports desde otro componente</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>🔌 Integración Supabase <span class="status status-dead">2 archivos</span></h3>
+    <ul>
+      <li><code>integrations/supabase/client.ts</code> — Cliente configurado</li>
+      <li><code>integrations/supabase/types.ts</code> — Tipos de DB</li>
+    </ul>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY sin configurar</div>
+      <div class="dep-item dep-missing">❌ 0 imports desde cualquier archivo</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>📚 SPRINT 3/ — Docs Históricas <span class="status status-dead">10 archivos</span></h3>
+    <ul>
+      <li>PRD, migración, seed SQL, research, prompt stitch, etc.</li>
+    </ul>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ Cero referencias desde código</div>
+      <div class="dep-item dep-missing">❌ seed_data_v2.sql no se usa (DatabaseSeeder.java es el seed real)</div>
+      <div class="dep-item dep-ok">🔶 Mover a docs/archive/ si se quiere preservar</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>🗑️ BACKEND/ Stale <span class="status status-dead">Copia entera</span></h3>
+    <p><code>FLORES-DELTA-FRONTEND/BACKEND/</code> — Copia del backend que NO compila.</p>
+    <div class="dep-list">
+      <div class="dep-item dep-missing">❌ No compila (errores de sintaxis en 4 archivos)</div>
+      <div class="dep-item dep-missing">❌ Docker apunta a delta-flores/</div>
+      <div class="dep-item dep-missing">❌ Frontend apunta a localhost:8080 (backend maestro)</div>
+      <div class="dep-item dep-missing">❌ 0 referencias en código, Docker, o config</div>
+      <div class="dep-item dep-ok">✅ Backend real está en delta-flores/web/</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-gray"></div>
+    <h3>🎨 CSS + Hook sin uso <span class="status status-dead">2 archivos</span></h3>
+    <ul>
+      <li><code>App.css</code> — No importado desde App.tsx (usa Tailwind)</li>
+      <li><code>hooks/use-mobile.tsx</code> — 0 referencias</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== DEPENDENCIAS BACKEND PARA FILTROS ===== -->
+<h2 class="section-title">🔗 Dependencias Backend para Filtros (Hoy rotos)</h2>
+<div class="flow-diagram">
+<svg viewBox="0 0 900 200">
+  <!-- Frontend sends -->
+  <rect x="30" y="30" width="220" height="70" class="flow-box flow-box-green"/>
+  <text x="140" y="65" class="flow-text" text-anchor="middle">Frontend (MainLogPage)</text>
+  <text x="140" y="85" class="flow-sub" text-anchor="middle">✅ Manda: ?eventType=WATERING&amp;salaId=3</text>
+
+  <!-- Arrow broken -->
+  <line x1="250" y1="65" x2="310" y2="65" class="flow-arrow flow-arrow-red" stroke-dasharray="6,3"/>
+  <text x="280" y="50" fill="#ef4444" font-size="10" text-anchor="middle">❌ PARÁMETROS</text>
+  <text x="280" y="62" fill="#ef4444" font-size="10" text-anchor="middle">PERDIDOS</text>
+  <polygon points="310,60 325,65 310,70" fill="#ef4444"/>
+
+  <!-- Controller -->
+  <rect x="325" y="30" width="200" height="70" class="flow-box flow-box-red"/>
+  <text x="425" y="65" class="flow-text" text-anchor="middle" fill="#ef4444">UnifiedEventController</text>
+  <text x="425" y="85" class="flow-sub" text-anchor="middle">❌ Sin @RequestParam</text>
+
+  <line x1="525" y1="65" x2="580" y2="65" class="flow-arrow flow-arrow-red"/>
+  <polygon points="580,60 595,65 580,70" fill="#ef4444"/>
+
+  <!-- Service -->
+  <rect x="595" y="30" width="180" height="70" class="flow-box flow-box-red"/>
+  <text x="685" y="65" class="flow-text" text-anchor="middle" fill="#ef4444">PlantEventService</text>
+  <text x="685" y="85" class="flow-sub" text-anchor="middle">❌ Sin filtros</text>
+
+  <line x1="775" y1="65" x2="830" y2="65" class="flow-arrow flow-arrow-red"/>
+  <polygon points="830,60 845,65 830,70" fill="#ef4444"/>
+
+  <!-- Repository -->
+  <rect x="845" y="30" width="50" height="70" class="flow-box flow-box-red"/>
+  <text x="870" y="65" class="flow-text" text-anchor="middle" fill="#ef4444" font-size="11">DB</text>
+  <text x="870" y="85" class="flow-sub" text-anchor="middle">N+1 🐌</text>
+
+  <!-- Fix suggestion -->
+  <rect x="30" y="130" width="860" height="50" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="460" y="155" fill="#60a5fa" font-size="14" font-weight="600" text-anchor="middle">🛠️ SOLUCIÓN: Agregar @RequestParam en Controller → pasar a Service → Criteria Query en Repository</text>
+  <text x="460" y="172" fill="#93c5fd" font-size="11" text-anchor="middle">⚠️ El frontend YA manda los parámetros correctamente. Solo falta el backend.</text>
+</svg>
+</div>
+
+<!-- ===== RECOMENDACIONES DE PRIORIDAD ===== -->
+<h2 class="section-title">🎯 Prioridades de Implementación (Frontend Estética)</h2>
+<div class="grid-3">
+  <div class="card">
+    <div class="bar bar-green"></div>
+    <h3>🔥 Prioridad 1: Limpieza <span class="status status-existing">FÁCIL</span></h3>
+    <p>Eliminar todo el código muerto. No afecta funcionalidad existente.</p>
+    <ul>
+      <li>Borrar <code>FLORES-DELTA-FRONTEND/BACKEND/</code></li>
+      <li>Borrar HTMLs, PS1, SPRINT 3/, supabase/</li>
+      <li>Borrar componentes sin uso (7)</li>
+      <li>Borrar App.css y use-mobile.tsx</li>
+      <li>Actualizar .gitignore</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-yellow"></div>
+    <h3>🔶 Prioridad 2: Visual <span class="status status-partial">MEDIA</span></h3>
+    <p>Mejoras estéticas del frontend sin tocar backend.</p>
+    <ul>
+      <li>Timeline Growdiaries (colores por etapa)</li>
+      <li>Nota Multimedia (audio + texto + imagen)</li>
+      <li>Orden alfabético de plantas</li>
+      <li>Responsive polish</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="bar bar-red"></div>
+    <h3>⚠️ Prioridad 3: Bugfixes <span class="status status-missing">NECESARIO</span></h3>
+    <p>Arreglar funcionalidad existente que está rota.</p>
+    <ul>
+      <li>Filtros de bitácora (depende de backend)</li>
+      <li>Nutrientes masivos</li>
+      <li>Métricas BI en dashboard</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div style="text-align: center; padding: 40px 0; color: var(--muted); font-size: 0.85rem; border-top: 1px solid #1e293b; margin-top: 40px;">
+  <p>Flores Delta — Análisis generado el 11 de Mayo de 2026</p>
+  <p style="margin-top: 4px;">Backend funcional en <code>delta-flores/web/</code> — NO MODIFICAR | Frontend activo en <code>FLORES-DELTA-FRONTEND/</code></p>
+</div>
+
+</div>
+</body>
+</html>

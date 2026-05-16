@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Flores del Delta - Dark Mode Design System */
+    --background: 215 28% 9%;          /* #111827 */
+    --foreground: 210 20% 98%;         /* #f9fafb - text-primary */
+
+    --card: 217 19% 17%;               /* #1f2937 */
+    --card-foreground: 210 20% 98%;
+
+    --popover: 217 19% 17%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 164 87% 40%;            /* #0fb980 - green accent */
+    --primary-foreground: 215 28% 9%;  /* dark text on green */
+
+    --secondary: 217 19% 17%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 217 19% 17%;
+    --muted-foreground: 220 9% 65%;    /* #9ca3af - text-secondary */
+
+    --accent: 164 87% 40%;
+    --accent-foreground: 215 28% 9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 183 38% 18%;             /* #1a3f41 */
+    --input: 183 38% 18%;
+    --ring: 164 87% 40%;
+
+    --radius: 0.75rem;                 /* rounded-xl */
+
+    --sidebar-background: 217 19% 17%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 164 87% 40%;
+    --sidebar-primary-foreground: 215 28% 9%;
+    --sidebar-accent: 183 38% 18%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 183 38% 18%;
+    --sidebar-ring: 164 87% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

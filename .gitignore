@@ -1,0 +1,67 @@
+# ===============================================
+# FLORES DELTA MVP - .gitignore
+# ===============================================
+
+# ===== SECRETOS Y CONFIGURACIÓN LOCAL =====
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+*.secret
+secrets.yml
+
+# ===== DEPENDENCIAS =====
+node_modules/
+target/
+.mvn/
+
+# ===== BUILD OUTPUTS =====
+dist/
+build/
+*.class
+*.jar
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== LOGS =====
+*.log
+logs/
+
+# ===== ARCHIVOS TEMPORALES =====
+.archive/
+*.backup
+*.bak
+*.tmp
+temp_*
+
+# ===== REFERENCIAS LOCALES (NO SUBIR A GITHUB) =====
+Fotos FD/
+Fotos GWJ/
+pegamys-web/
+
+# ===== FRONTEND - CARPETAS OBSOLETAS =====
+frontend/BACKEND/
+frontend/SPRINT 3/
+
+# ===== FRONTEND - SCRIPTS DEBUG TEMPORALES =====
+frontend/*.ps1
+frontend/debug-auth.html
+frontend/verificar_localstorage.html
+
+# ===== DOCUMENTACIÓN OBSOLETA =====
+*.pdf
+FOTOS BACKEND/
+
+# ===== BACKEND - HELP GENERADO =====
+backend/HELP.md
