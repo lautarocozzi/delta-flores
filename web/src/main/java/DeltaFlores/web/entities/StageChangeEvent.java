@@ -13,4 +13,7 @@ public class StageChangeEvent extends PlantEvent {
 
     @Enumerated(EnumType.STRING)
     private NuevaEtapa nuevaEtapa;
+
+    @Enumerated(EnumType.STRING)
+    private NuevaEtapa viejaEtapa;
 }

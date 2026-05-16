@@ -79,8 +79,19 @@ public class WateringEventService {
     @Transactional(readOnly = true)
     public WateringEventDto getWateringEventById(Long id) {
         log.info("\n\n🔍 Buscando evento de riego con ID: {}", id);
+        User currentUser = getCurrentUser();
         WateringEvent event = wateringEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de riego no encontrado con id: " + id));
+
+        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
+
+        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
+            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
+            if (!isOwner) {
+                throw new AccessDeniedException("No tienes permiso para ver este evento.");
+            }
+        }
+
         return (WateringEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 

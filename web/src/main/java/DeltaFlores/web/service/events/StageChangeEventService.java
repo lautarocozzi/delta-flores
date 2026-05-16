@@ -54,6 +54,12 @@ public class StageChangeEventService {
                 log.warn("\u26A0️ Algunos IDs de plantas no fueron encontrados al crear el evento.");
             }
             event.setPlantas(plantas);
+            
+            // Set viejaEtapa from the first plant if available
+            if (!plantas.isEmpty()) {
+                event.setViejaEtapa(plantas.get(0).getEtapa());
+            }
+
             // Update planta's etapa
             for (Planta planta : plantas) {
                 planta.setEtapa(dto.getNuevaEtapa());
@@ -72,8 +78,19 @@ public class StageChangeEventService {
     @Transactional(readOnly = true)
     public StageChangeEventDto getStageChangeEventById(Long id) {
         log.info("\n\n🔎 Buscando evento de cambio de etapa con ID: {}", id);
+        User currentUser = getCurrentUser();
         StageChangeEvent event = stageChangeEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
+
+        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
+
+        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
+            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
+            if (!isOwner) {
+                throw new AccessDeniedException("No tienes permiso para ver este evento.");
+            }
+        }
+        
         return (StageChangeEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 
@@ -133,6 +150,12 @@ public class StageChangeEventService {
                 log.warn("\u26A0️ Algunos IDs de plantas no fueron encontrados al actualizar el evento.");
             }
             existingEvent.setPlantas(plantas);
+            
+            // Set viejaEtapa from the first plant if available
+            if (!plantas.isEmpty()) {
+                existingEvent.setViejaEtapa(plantas.get(0).getEtapa());
+            }
+
             // Update planta's etapa
             for (Planta planta : plantas) {
                 planta.setEtapa(dto.getNuevaEtapa());

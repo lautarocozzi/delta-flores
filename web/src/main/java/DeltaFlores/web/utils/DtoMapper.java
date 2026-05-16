@@ -282,6 +282,7 @@ public final class DtoMapper {
         copyCommonEventPropertiesToDto(event, dto);
         dto.setEventType("STAGE_CHANGE");
         dto.setNuevaEtapa(event.getNuevaEtapa());
+        dto.setViejaEtapa(event.getViejaEtapa());
         return dto;
     }
 
@@ -366,6 +367,7 @@ public final class DtoMapper {
     private static StageChangeEvent stageChangeEventDtoToStageChangeEvent(StageChangeEventDto dto, StageChangeEvent event) {
         copyCommonEventPropertiesToEntity(dto, event);
         event.setNuevaEtapa(dto.getNuevaEtapa());
+        event.setViejaEtapa(dto.getViejaEtapa());
         return event;
     }
 

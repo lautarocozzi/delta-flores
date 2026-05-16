@@ -49,15 +49,15 @@ public class NoteEventService {
         event.setFecha(dto.getFecha());
         event.setText(dto.getText());
 
-        // Handle file uploads
-        List<String> mediaUrls = new ArrayList<>();
+        // Handle file uploads, storing object names
+        List<String> mediaObjectNames = new ArrayList<>();
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
-                String fileUrl = fileStorageService.uploadFile(file);
-                mediaUrls.add(fileUrl);
+                String objectName = fileStorageService.uploadFile(file);
+                mediaObjectNames.add(objectName);
             }
         }
-        event.setMediaUrls(mediaUrls);
+        event.setMediaUrls(mediaObjectNames); // The entity field now stores object names
 
         if (dto.getPlantaIds() != null && !dto.getPlantaIds().isEmpty()) {
             List<Planta> plantas = plantaRepository.findAllById(dto.getPlantaIds());
@@ -74,22 +74,44 @@ public class NoteEventService {
 
         NoteEvent savedEvent = noteEventRepository.save(event);
         log.info("\n\n✨ Evento de nota creado con ID: {}", savedEvent.getId());
-        return (NoteEventDto) DtoMapper.plantEventToPlantEventDto(savedEvent);
+        return toDtoWithPresignedUrls(savedEvent);
     }
 
     @Transactional(readOnly = true)
     public NoteEventDto getNoteEventById(Long id) {
         log.info("\n\n🔎 Buscando evento de nota con ID: {}", id);
+        User currentUser = getCurrentUser();
         NoteEvent event = noteEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de nota no encontrado con id: " + id));
-        return (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event);
+
+        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
+
+        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
+            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
+            if (!isOwner) {
+                throw new AccessDeniedException("No tienes permiso para ver este evento.");
+            }
+        }
+
+        return toDtoWithPresignedUrls(event);
+    }
+
+    private NoteEventDto toDtoWithPresignedUrls(NoteEvent event) {
+        NoteEventDto dto = (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event);
+        if (event.getMediaUrls() != null && !event.getMediaUrls().isEmpty()) {
+            List<String> presignedUrls = event.getMediaUrls().stream()
+                    .map(fileStorageService::getPresignedUrl)
+                    .collect(Collectors.toList());
+            dto.setMediaUrls(presignedUrls);
+        }
+        return dto;
     }
 
     @Transactional(readOnly = true)
     public List<NoteEventDto> getAllNoteEvents() {
         log.info("\n\n🔎 Obteniendo todos los eventos de nota.");
         return noteEventRepository.findAll().stream()
-                .map(event -> (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event))
+                .map(this::toDtoWithPresignedUrls)
                 .collect(Collectors.toList());
     }
 
@@ -97,7 +119,7 @@ public class NoteEventService {
     public List<NoteEventDto> getNoteEventsByPlantaId(Long plantaId) {
         log.info("\n\n🔎 Obteniendo eventos de nota para la planta ID: {}", plantaId);
         return noteEventRepository.findByPlantaId(plantaId).stream()
-                .map(event -> (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event))
+                .map(this::toDtoWithPresignedUrls)
                 .collect(Collectors.toList());
     }
 
@@ -105,7 +127,7 @@ public class NoteEventService {
     public List<NoteEventDto> getNoteEventsByFecha(LocalDate fecha) {
         log.info("\n\n🔎 Obteniendo eventos de nota para la fecha: {}", fecha);
         return noteEventRepository.findByFecha(fecha).stream()
-                .map(event -> (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event))
+                .map(this::toDtoWithPresignedUrls)
                 .collect(Collectors.toList());
     }
 
@@ -113,7 +135,7 @@ public class NoteEventService {
     public List<NoteEventDto> getNoteEventsByFechaAfter(LocalDate fecha) {
         log.info("\n\n🔎 Obteniendo eventos de nota posteriores a la fecha: {}", fecha);
         return noteEventRepository.findByFechaAfter(fecha).stream()
-                .map(event -> (NoteEventDto) DtoMapper.plantEventToPlantEventDto(event))
+                .map(this::toDtoWithPresignedUrls)
                 .collect(Collectors.toList());
     }
 
@@ -135,20 +157,33 @@ public class NoteEventService {
         existingEvent.setFecha(dto.getFecha());
         existingEvent.setText(dto.getText());
 
-        // Handle new file uploads (append to existing mediaUrls or replace)
+        // --- File Management Logic ---
+        List<String> existingObjectNames = existingEvent.getMediaUrls() != null ? new ArrayList<>(existingEvent.getMediaUrls()) : new ArrayList<>();
+        List<String> objectNamesToKeep = dto.getMediaUrls() != null ? dto.getMediaUrls() : new ArrayList<>();
+        List<String> newObjectNames = new ArrayList<>();
+
+        // 1. Delete files that are no longer referenced
+        List<String> objectNamesToDelete = new ArrayList<>(existingObjectNames);
+        objectNamesToDelete.removeAll(objectNamesToKeep);
+        for (String objectName : objectNamesToDelete) {
+            fileStorageService.deleteFile(objectName);
+            log.info("🗑️ Archivo obsoleto eliminado de MinIO: {}", objectName);
+        }
+
+        // 2. Upload new files
         if (newFiles != null && !newFiles.isEmpty()) {
-            List<String> currentMediaUrls = existingEvent.getMediaUrls() != null ? new ArrayList<>(existingEvent.getMediaUrls()) : new ArrayList<>();
             for (MultipartFile file : newFiles) {
-                String fileUrl = fileStorageService.uploadFile(file);
-                currentMediaUrls.add(fileUrl);
+                String newObjectName = fileStorageService.uploadFile(file);
+                newObjectNames.add(newObjectName);
             }
-            existingEvent.setMediaUrls(currentMediaUrls);
         }
-        // If dto contains mediaUrls, it means they are part of the update request
-        // e.g. for removing some old ones or replacing them entirely
-        if (dto.getMediaUrls() != null) {
-            existingEvent.setMediaUrls(dto.getMediaUrls());
-        }
+        
+        // 3. Combine kept and new object names for the final list
+        List<String> finalObjectNames = new ArrayList<>(objectNamesToKeep);
+        finalObjectNames.addAll(newObjectNames);
+        existingEvent.setMediaUrls(finalObjectNames);
+        // --- End File Management ---
+
 
         if (dto.getPlantaIds() != null) {
             List<Planta> plantas = plantaRepository.findAllById(dto.getPlantaIds());
@@ -160,7 +195,7 @@ public class NoteEventService {
 
         NoteEvent updatedEvent = noteEventRepository.save(existingEvent);
         log.info("\n\n✨ Evento de nota con ID: {} actualizado.", updatedEvent.getId());
-        return (NoteEventDto) DtoMapper.plantEventToPlantEventDto(updatedEvent);
+        return toDtoWithPresignedUrls(updatedEvent);
     }
 
     @Transactional
@@ -178,10 +213,10 @@ public class NoteEventService {
             }
         }
 
-        // Optional: Delete associated files from storage
+        // Delete associated files from MinIO using their object names
         if (eventToDelete.getMediaUrls() != null) {
-            for (String url : eventToDelete.getMediaUrls()) {
-                fileStorageService.deleteFile(url);
+            for (String objectName : eventToDelete.getMediaUrls()) {
+                fileStorageService.deleteFile(objectName);
             }
         }
         noteEventRepository.deleteById(id);

@@ -11,4 +11,5 @@ import lombok.Setter;
 
 public class StageChangeEventDto extends PlantEventDto{
     private NuevaEtapa nuevaEtapa;
+    private NuevaEtapa viejaEtapa;
 }

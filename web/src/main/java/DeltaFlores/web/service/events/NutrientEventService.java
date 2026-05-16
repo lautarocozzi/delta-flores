@@ -84,8 +84,19 @@ public class NutrientEventService {
     @Transactional(readOnly = true)
     public NutrientEventDto getNutrientEventById(Long id) {
         log.info("\n\n🔎 Buscando evento de nutriente con ID: {}", id);
+        User currentUser = getCurrentUser();
         NutrientEvent event = nutrientEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de nutriente no encontrado con id: " + id));
+
+        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
+
+        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
+            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
+            if (!isOwner) {
+                throw new AccessDeniedException("No tienes permiso para ver este evento.");
+            }
+        }
+
         return (NutrientEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 
