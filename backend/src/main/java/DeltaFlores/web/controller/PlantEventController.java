@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,27 @@ public class PlantEventController {
         } catch (ResourceNotFoundException e) {
             log.warn("\n\n[Capa Controller] \u26A0\uFE0F Planta con ID: {} no encontrada.", plantaId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (AccessDeniedException e) {
+            log.warn("\n\n[Capa Controller] \u26A0\uFE0F Acceso denegado para eventos de planta ID: {}", plantaId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception e) {
             log.error("\n\n[Capa Controller] \u274C Error al obtener eventos para la planta ID {}: {}", plantaId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{plantaId}/events/public")
+    public ResponseEntity<List<PlantEventDto>> getPublicEventsForPlanta(@PathVariable Long plantaId) {
+        log.info("\n\n[Capa Controller] \uD83D\uDD0E Solicitud para obtener eventos públicos de la planta ID: {}", plantaId);
+        try {
+            List<PlantEventDto> events = plantEventService.getPublicEventsForPlanta(plantaId);
+            log.info("\n\n[Capa Controller] \u2705 {} eventos públicos obtenidos para la planta ID: {}", events.size(), plantaId);
+            return ResponseEntity.ok(events);
+        } catch (ResourceNotFoundException e) {
+            log.warn("\n\n[Capa Controller] \u26A0\uFE0F Planta con ID: {} no encontrada o no es pública.", plantaId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (Exception e) {
+            log.error("\n\n[Capa Controller] \u274C Error al obtener eventos públicos para la planta ID {}: {}", plantaId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -2,6 +2,8 @@ package DeltaFlores.web.utils;
 
 import DeltaFlores.web.dto.*;
 import DeltaFlores.web.entities.*;
+import DeltaFlores.web.repository.PostVoteRepository;
+import DeltaFlores.web.repository.PostReplyRepository;
 import org.apache.coyote.BadRequestException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -23,13 +25,16 @@ public final class DtoMapper {
         userDto.setNombre(user.getNombre());
         userDto.setApellido(user.getApellido());
         userDto.setUsername(user.getUsername());
+        userDto.setEmail(user.getEmail());
+        userDto.setImagenUrl(user.getImagenUrl());
         userDto.setPassword(user.getPassword());
         userDto.setRol(user.getRol());
         userDto.setFechaRegistro(user.getFechaRegistro());
         return userDto;
     }
 
-    public static UserDto UserToRegisterDtoToUserDto(UserDto userDto, UserToRegisterDto userToRegisterDto) throws BadRequestException {
+    public static UserDto UserToRegisterDtoToUserDto(UserDto userDto, UserToRegisterDto userToRegisterDto)
+            throws BadRequestException {
         userDto.setId(userToRegisterDto.getId());
         userDto.setUsername(userToRegisterDto.getEmail());
         userDto.setNombre(userToRegisterDto.getNombre());
@@ -69,8 +74,14 @@ public final class DtoMapper {
         salaDto.setHorasLuz(sala.getHorasLuz());
         salaDto.setHumedad(sala.getHumedad());
         salaDto.setTemperaturaAmbiente(sala.getTemperaturaAmbiente());
+        salaDto.setTipoAmbiente(sala.getTipoAmbiente());
+        salaDto.setImagenUrl(sala.getImagenUrl());
+        salaDto.setPublic(sala.isPublic());
+        salaDto.setPinned(sala.isPinned());
+        salaDto.setFechaModificacion(sala.getFechaModificacion());
         if (sala.getUser() != null) {
             salaDto.setUserId(sala.getUser().getId());
+            salaDto.setOwnerUsername(sala.getUser().getUsername());
         }
         if (sala.getPlantas() != null) {
             salaDto.setPlantaIds(sala.getPlantas().stream()
@@ -95,9 +106,12 @@ public final class DtoMapper {
         sala.setHorasLuz(salaDto.getHorasLuz());
         sala.setHumedad(salaDto.getHumedad());
         sala.setTemperaturaAmbiente(salaDto.getTemperaturaAmbiente());
+        sala.setTipoAmbiente(salaDto.getTipoAmbiente());
+        sala.setImagenUrl(salaDto.getImagenUrl());
+        sala.setPublic(salaDto.isPublic());
+        sala.setPinned(salaDto.isPinned());
         return sala;
     }
-
 
     public static PlantaDto plantaToPlantaDto(Planta planta) {
         PlantaDto plantaDto = new PlantaDto();
@@ -109,14 +123,33 @@ public final class DtoMapper {
         plantaDto.setPublic(planta.isPublic());
         plantaDto.setEtapa(planta.getEtapa());
         plantaDto.setUbicacion(planta.getUbicacion());
+        plantaDto.setImagenUrl(planta.getImagenUrl());
         plantaDto.setProduccion(planta.getProduccion());
         plantaDto.setFechaCreacion(planta.getFechaCreacion());
         if (planta.getSala() != null) {
             plantaDto.setSalaId(planta.getSala().getId());
+            // Popular objeto completo para frontend
+            SalaDto salaDto = new SalaDto();
+            salaDto.setId(planta.getSala().getId());
+            salaDto.setNombre(planta.getSala().getNombre());
+            plantaDto.setSala(salaDto);
         }
         if (planta.getCepa() != null) {
             plantaDto.setCepaId(planta.getCepa().getId());
+            // Popular objeto completo para frontend
+            CepaDto cepaDto = new CepaDto();
+            cepaDto.setId(planta.getCepa().getId());
+            cepaDto.setGeneticaParental(planta.getCepa().getGeneticaParental());
+            cepaDto.setAbreviatura(planta.getCepa().getAbreviatura());
+            plantaDto.setCepaDto(cepaDto);
         }
+
+        if (planta.getZona() != null) {
+            plantaDto.setZonaId(planta.getZona().getId());
+            plantaDto.setZonaNombre(planta.getZona().getNombre());
+        }
+        plantaDto.setColumnaEnZona(planta.getColumnaEnZona());
+        plantaDto.setFilaEnZona(planta.getFilaEnZona());
 
         if (planta.getEvents() != null && !planta.getEvents().isEmpty()) {
             plantaDto.setEventIds(planta.getEvents().stream()
@@ -127,7 +160,7 @@ public final class DtoMapper {
         return plantaDto;
     }
 
-    public static Planta plantaDtoToPlanta(Planta planta, PlantaDto plantaDto, Cepa cepa, Sala sala) {
+    public static Planta plantaDtoToPlanta(Planta planta, PlantaDto plantaDto, Cepa cepa, Sala sala, Zona zona) {
         if (plantaDto.getId() != null && plantaDto.getId() > 0) {
             planta.setId(plantaDto.getId());
         }
@@ -136,13 +169,52 @@ public final class DtoMapper {
         planta.setEtapa(plantaDto.getEtapa());
         planta.setFechaCreacion(plantaDto.getFechaCreacion());
         planta.setUbicacion(plantaDto.getUbicacion());
+        planta.setImagenUrl(plantaDto.getImagenUrl());
         planta.setProduccion(plantaDto.getProduccion());
-        
+        planta.setFechaFin(plantaDto.getFechaFin());
+
         // Set the entities that were fetched by the service
         planta.setCepa(cepa);
         planta.setSala(sala);
+        planta.setZona(zona);
+        if (plantaDto.getColumnaEnZona() != null) {
+            planta.setColumnaEnZona(plantaDto.getColumnaEnZona());
+        }
+        if (plantaDto.getFilaEnZona() != null) {
+            planta.setFilaEnZona(plantaDto.getFilaEnZona());
+        }
 
         return planta;
+    }
+
+    // =====================================================================================
+    // Ubicacion Generation
+    // =====================================================================================
+
+    /**
+     * Auto-generates the ubicacion string for a plant based on its zone name
+     * and grid coordinates.
+     * <p>
+     * Format: {@code {zonaNombre}-F{fila+1}-C{col+1}} (1-based indices)
+     * <p>
+     * Spaces in zonaNombre are replaced with hyphens.
+     * Returns {@code null} if zonaNombre is null (plant not placed in a zone grid).
+     * If columna or fila is null, "?" is used as placeholder.
+     *
+     * @param zonaNombre  the zone name (spaces replaced with hyphens)
+     * @param columna     the column index within the zone (0-based, displayed 1-based)
+     * @param fila        the row index within the zone (0-based, displayed 1-based)
+     * @return the generated ubicacion string, or null if zonaNombre is null
+     */
+    public static String generarUbicacion(String zonaNombre, Integer columna, Integer fila) {
+        if (zonaNombre == null) {
+            return null;
+        }
+        String col = columna != null ? String.valueOf(columna + 1) : "?";
+        String fil = fila != null ? String.valueOf(fila + 1) : "?";
+        return zonaNombre.replaceAll("\\s+", "-")
+                + "-F" + fil
+                + "-C" + col;
     }
 
     // =====================================================================================
@@ -158,6 +230,7 @@ public final class DtoMapper {
         cepaDto.setThc(cepa.getThc());
         cepaDto.setCbd(cepa.getCbd());
         cepaDto.setDetalle(cepa.getDetalle());
+        cepaDto.setAbreviatura(cepa.getAbreviatura());
         if (cepa.getUser() != null) {
             cepaDto.setUserId(cepa.getUser().getId());
         }
@@ -175,7 +248,54 @@ public final class DtoMapper {
         cepa.setThc(cepaDto.getThc());
         cepa.setCbd(cepaDto.getCbd());
         cepa.setDetalle(cepaDto.getDetalle());
+        cepa.setAbreviatura(cepaDto.getAbreviatura());
         return cepa;
+    }
+
+    // =====================================================================================
+    // Zona Mapping
+    // =====================================================================================
+
+    public static ZonaDto zonaToZonaDto(Zona zona) {
+        if (zona == null) {
+            return null;
+        }
+        ZonaDto dto = new ZonaDto();
+        dto.setId(zona.getId());
+        dto.setNombre(zona.getNombre());
+        dto.setPosicionX(zona.getPosicionX());
+        dto.setPosicionY(zona.getPosicionY());
+        dto.setColumnas(zona.getColumnas());
+        dto.setFilas(zona.getFilas());
+        if (zona.getSala() != null) {
+            dto.setSalaId(zona.getSala().getId());
+            dto.setSalaNombre(zona.getSala().getNombre());
+        }
+        if (zona.getPlantas() != null) {
+            dto.setPlantaIds(zona.getPlantas().stream()
+                    .map(Planta::getId)
+                    .collect(Collectors.toList()));
+        }
+        return dto;
+    }
+
+    public static Zona zonaDtoToZona(ZonaDto dto, Zona zona, Sala sala) {
+        if (dto == null) {
+            return null;
+        }
+        if (zona == null) {
+            zona = new Zona();
+        }
+        if (dto.getId() != null && dto.getId() > 0) {
+            zona.setId(dto.getId());
+        }
+        zona.setNombre(dto.getNombre());
+        zona.setPosicionX(dto.getPosicionX());
+        zona.setPosicionY(dto.getPosicionY());
+        zona.setColumnas(dto.getColumnas());
+        zona.setFilas(dto.getFilas());
+        zona.setSala(sala);
+        return zona;
     }
 
     // =====================================================================================
@@ -204,7 +324,7 @@ public final class DtoMapper {
             nutriente = new Nutriente();
         }
         if (dto.getId() != null) {
-             nutriente.setId(dto.getId());
+            nutriente.setId(dto.getId());
         }
         nutriente.setTitulo(dto.getTitulo());
         nutriente.setDescripcion(dto.getDescripcion());
@@ -282,11 +402,11 @@ public final class DtoMapper {
         copyCommonEventPropertiesToDto(event, dto);
         dto.setEventType("STAGE_CHANGE");
         dto.setNuevaEtapa(event.getNuevaEtapa());
-        dto.setViejaEtapa(event.getViejaEtapa());
+        dto.setEtapaAnterior(event.getEtapaAnterior());
         return dto;
     }
 
-    private static MeasurementEventDto measurementEventToMeasurementEventDto(MeasurementEvent event) {
+    public static MeasurementEventDto measurementEventToMeasurementEventDto(MeasurementEvent event) {
         MeasurementEventDto dto = new MeasurementEventDto();
         copyCommonEventPropertiesToDto(event, dto);
         dto.setEventType("MEASUREMENT");
@@ -303,8 +423,8 @@ public final class DtoMapper {
         dto.setFecha(event.getFecha());
         if (event.getPlantas() != null && !event.getPlantas().isEmpty()) {
             dto.setPlantaIds(event.getPlantas().stream()
-                                  .map(Planta::getId)
-                                  .collect(Collectors.toList()));
+                    .map(Planta::getId)
+                    .collect(Collectors.toList()));
         }
     }
 
@@ -314,19 +434,26 @@ public final class DtoMapper {
 
     public static PlantEvent plantEventDtoToPlantEvent(PlantEventDto eventDto, PlantEvent event) {
         if (eventDto instanceof NoteEventDto) {
-            return noteEventDtoToNoteEvent((NoteEventDto) eventDto, (event instanceof NoteEvent) ? (NoteEvent) event : new NoteEvent());
+            return noteEventDtoToNoteEvent((NoteEventDto) eventDto,
+                    (event instanceof NoteEvent) ? (NoteEvent) event : new NoteEvent());
         } else if (eventDto instanceof WateringEventDto) {
-            return wateringEventDtoToWateringEvent((WateringEventDto) eventDto, (event instanceof WateringEvent) ? (WateringEvent) event : new WateringEvent());
+            return wateringEventDtoToWateringEvent((WateringEventDto) eventDto,
+                    (event instanceof WateringEvent) ? (WateringEvent) event : new WateringEvent());
         } else if (eventDto instanceof PruningEventDto) {
-            return pruningEventDtoToPruningEvent((PruningEventDto) eventDto, (event instanceof PruningEvent) ? (PruningEvent) event : new PruningEvent());
+            return pruningEventDtoToPruningEvent((PruningEventDto) eventDto,
+                    (event instanceof PruningEvent) ? (PruningEvent) event : new PruningEvent());
         } else if (eventDto instanceof DefoliationEventDto) {
-            return defoliationEventDtoToDefoliationEvent((DefoliationEventDto) eventDto, (event instanceof DefoliationEvent) ? (DefoliationEvent) event : new DefoliationEvent());
+            return defoliationEventDtoToDefoliationEvent((DefoliationEventDto) eventDto,
+                    (event instanceof DefoliationEvent) ? (DefoliationEvent) event : new DefoliationEvent());
         } else if (eventDto instanceof NutrientEventDto) {
-            return nutrientEventDtoToNutrientEvent((NutrientEventDto) eventDto, (event instanceof NutrientEvent) ? (NutrientEvent) event : new NutrientEvent());
+            return nutrientEventDtoToNutrientEvent((NutrientEventDto) eventDto,
+                    (event instanceof NutrientEvent) ? (NutrientEvent) event : new NutrientEvent());
         } else if (eventDto instanceof StageChangeEventDto) {
-            return stageChangeEventDtoToStageChangeEvent((StageChangeEventDto) eventDto, (event instanceof StageChangeEvent) ? (StageChangeEvent) event : new StageChangeEvent());
+            return stageChangeEventDtoToStageChangeEvent((StageChangeEventDto) eventDto,
+                    (event instanceof StageChangeEvent) ? (StageChangeEvent) event : new StageChangeEvent());
         } else if (eventDto instanceof MeasurementEventDto) {
-            return measurementEventDtoToMeasurementEvent((MeasurementEventDto) eventDto, (event instanceof MeasurementEvent) ? (MeasurementEvent) event : new MeasurementEvent());
+            return measurementEventDtoToMeasurementEvent((MeasurementEventDto) eventDto,
+                    (event instanceof MeasurementEvent) ? (MeasurementEvent) event : new MeasurementEvent());
         }
         throw new IllegalArgumentException("Unknown event DTO type: " + eventDto.getClass().getName());
     }
@@ -334,7 +461,8 @@ public final class DtoMapper {
     private static NoteEvent noteEventDtoToNoteEvent(NoteEventDto dto, NoteEvent event) {
         copyCommonEventPropertiesToEntity(dto, event);
         event.setText(dto.getText());
-        // The 'mediaUrls' are set by the service after storing the files from dto.getFiles()
+        // The 'mediaUrls' are set by the service after storing the files from
+        // dto.getFiles()
         return event;
     }
 
@@ -352,7 +480,8 @@ public final class DtoMapper {
         return event;
     }
 
-    private static DefoliationEvent defoliationEventDtoToDefoliationEvent(DefoliationEventDto dto, DefoliationEvent event) {
+    private static DefoliationEvent defoliationEventDtoToDefoliationEvent(DefoliationEventDto dto,
+            DefoliationEvent event) {
         copyCommonEventPropertiesToEntity(dto, event);
         event.setGradoDefoliacion(dto.getGradoDefoliacion());
         return event;
@@ -364,14 +493,15 @@ public final class DtoMapper {
         return event;
     }
 
-    private static StageChangeEvent stageChangeEventDtoToStageChangeEvent(StageChangeEventDto dto, StageChangeEvent event) {
+    private static StageChangeEvent stageChangeEventDtoToStageChangeEvent(StageChangeEventDto dto,
+            StageChangeEvent event) {
         copyCommonEventPropertiesToEntity(dto, event);
         event.setNuevaEtapa(dto.getNuevaEtapa());
-        event.setViejaEtapa(dto.getViejaEtapa());
         return event;
     }
 
-    private static MeasurementEvent measurementEventDtoToMeasurementEvent(MeasurementEventDto dto, MeasurementEvent event) {
+    private static MeasurementEvent measurementEventDtoToMeasurementEvent(MeasurementEventDto dto,
+            MeasurementEvent event) {
         copyCommonEventPropertiesToEntity(dto, event);
         event.setHorasLuz(dto.getHorasLuz()); // Now String
         event.setHumedad(dto.getHumedad());
@@ -387,5 +517,128 @@ public final class DtoMapper {
         }
         event.setFecha(dto.getFecha());
 
+    }
+
+    // =====================================================================================
+    // Notificacion Mapping
+    // =====================================================================================
+
+    // =====================================================================================
+    // SalaColaborador Mapping
+    // =====================================================================================
+
+    public static SalaColaboradorDto salaColaboradorToDto(SalaColaborador sc) {
+        SalaColaboradorDto dto = new SalaColaboradorDto();
+        dto.setId(sc.getId());
+        dto.setSalaId(sc.getSala().getId());
+        dto.setSalaNombre(sc.getSala().getNombre());
+        dto.setUserId(sc.getUser().getId());
+        dto.setUserNombre(sc.getUser().getNombre());
+        dto.setUserApellido(sc.getUser().getApellido());
+        dto.setUserUsername(sc.getUser().getUsername());
+        dto.setTipoColaborador(sc.getTipoColaborador() != null ? sc.getTipoColaborador().name() : "EDITOR");
+        return dto;
+    }
+
+    public static NotificacionDto notificacionToNotificacionDto(Notificacion notificacion) {
+        NotificacionDto dto = new NotificacionDto();
+        dto.setId(notificacion.getId());
+        dto.setTitulo(notificacion.getTitulo());
+        dto.setDescripcion(notificacion.getDescripcion());
+        dto.setTipoEvento(notificacion.getTipoEvento());
+        dto.setFechaCreacion(notificacion.getFechaCreacion());
+        dto.setFechaLeida(notificacion.getFechaLeida());
+        dto.setLeida(notificacion.getFechaLeida() != null);
+
+        User usuario = notificacion.getUsuario();
+        if (usuario != null) {
+            dto.setUsuarioId(usuario.getId());
+            dto.setUsuarioNombre(usuario.getNombre());
+            dto.setUsuarioApellido(usuario.getApellido());
+            dto.setUsuarioUsername(usuario.getUsername());
+            dto.setUsuarioRol(usuario.getRol());
+        }
+
+        return dto;
+    }
+
+    // ─── Post Mapping ──────────────────────────────────────
+
+    public static PostDto postToDto(Post post, Long currentUserId,
+                                     PostVoteRepository voteRepository,
+                                     PostReplyRepository replyRepository) {
+        if (post == null) return null;
+        PostDto dto = new PostDto();
+        dto.setId(post.getId());
+        dto.setTitulo(post.getTitulo());
+        dto.setContenido(post.getContenido());
+        dto.setContenidoPreview(post.getContenidoPreview());
+        dto.setTipoPost(post.getTipoPost());
+        dto.setCategoria(post.getCategoria());
+        dto.setResuelto(post.isResuelto());
+        dto.setHero(post.isHero());
+        dto.setVistas(post.getVistas());
+        dto.setFechaCreacion(post.getFechaCreacion());
+
+        if (post.getUser() != null) {
+            dto.setUserId(post.getUser().getId());
+            dto.setUserUsername(post.getUser().getUsername());
+            dto.setUserNombre(post.getUser().getNombre());
+            dto.setUserApellido(post.getUser().getApellido());
+            dto.setUserImagenUrl(post.getUser().getImagenUrl());
+        }
+
+        // Vote counts
+        long upCount = voteRepository.countByPostIdAndTipo(post.getId(), TipoVoto.UP);
+        long downCount = voteRepository.countByPostIdAndTipo(post.getId(), TipoVoto.DOWN);
+        dto.setUpCount((int) upCount);
+        dto.setDownCount((int) downCount);
+        dto.setScore((int) (upCount - downCount));
+
+        // Reply count
+        long replyCount = replyRepository.countByPostId(post.getId());
+        dto.setReplyCount((int) replyCount);
+
+        // Current user vote
+        if (currentUserId != null) {
+            voteRepository.findByPostIdAndUserId(post.getId(), currentUserId)
+                    .ifPresent(v -> dto.setCurrentUserVote(v.getTipo().name()));
+        }
+
+        return dto;
+    }
+
+    public static PostReplyDto replyToDto(PostReply reply, Long currentUserId,
+                                           PostVoteRepository voteRepository) {
+        if (reply == null) return null;
+        PostReplyDto dto = new PostReplyDto();
+        dto.setId(reply.getId());
+        dto.setContenido(reply.getContenido());
+        dto.setPostId(reply.getPost().getId());
+        dto.setSolucion(reply.isSolucion());
+        dto.setFechaCreacion(reply.getFechaCreacion());
+
+        if (reply.getUser() != null) {
+            dto.setUserId(reply.getUser().getId());
+            dto.setUserUsername(reply.getUser().getUsername());
+            dto.setUserNombre(reply.getUser().getNombre());
+            dto.setUserApellido(reply.getUser().getApellido());
+            dto.setUserImagenUrl(reply.getUser().getImagenUrl());
+        }
+
+        // Vote counts
+        long upCount = voteRepository.countByReplyIdAndTipo(reply.getId(), TipoVoto.UP);
+        long downCount = voteRepository.countByReplyIdAndTipo(reply.getId(), TipoVoto.DOWN);
+        dto.setUpCount((int) upCount);
+        dto.setDownCount((int) downCount);
+        dto.setScore((int) (upCount - downCount));
+
+        // Current user vote
+        if (currentUserId != null) {
+            voteRepository.findByReplyIdAndUserId(reply.getId(), currentUserId)
+                    .ifPresent(v -> dto.setCurrentUserVote(v.getTipo().name()));
+        }
+
+        return dto;
     }
 }

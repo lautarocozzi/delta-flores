@@ -9,7 +9,7 @@ import lombok.Setter;
 @Data
 @EqualsAndHashCode(callSuper = true)
 
-public class StageChangeEventDto extends PlantEventDto{
+public class StageChangeEventDto extends PlantEventDto {
     private NuevaEtapa nuevaEtapa;
-    private NuevaEtapa viejaEtapa;
+    private NuevaEtapa etapaAnterior;
 }

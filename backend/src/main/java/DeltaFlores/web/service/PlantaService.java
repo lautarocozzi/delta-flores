@@ -5,12 +5,18 @@ import DeltaFlores.web.dto.SalaDto;
 import DeltaFlores.web.entities.Cepa;
 import DeltaFlores.web.entities.Planta;
 import DeltaFlores.web.entities.Sala;
+import DeltaFlores.web.entities.TipoColaborador;
 import DeltaFlores.web.entities.User;
+import DeltaFlores.web.entities.Zona;
+import DeltaFlores.web.exception.ResourceAlreadyExistsException;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.CepaRepository;
+import DeltaFlores.web.repository.FavoriteRepository;
 import DeltaFlores.web.repository.PlantaRepository;
+import DeltaFlores.web.repository.SalaColaboradorRepository;
 import DeltaFlores.web.repository.SalaRepository;
 import DeltaFlores.web.repository.UserRepository;
+import DeltaFlores.web.repository.ZonaRepository;
 import DeltaFlores.web.security.CustomUserDetails;
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +39,10 @@ public class PlantaService {
     private final UserRepository userRepository;
     private final SalaService salaService;
     private final CepaRepository cepaRepository;
+    private final SalaColaboradorRepository salaColaboradorRepository;
     private final SalaRepository salaRepository;
+    private final ZonaRepository zonaRepository;
+    private final FavoriteRepository favoriteRepository;
 
     // --- Security & Helper Methods ---
 
@@ -59,11 +68,24 @@ public class PlantaService {
             return; // Skip ownership check
         }
 
-        if (!planta.getUser().getId().equals(currentUser.getId())) {
-            log.warn("ACCESO DENEGADO: El usuario '{}' (ID: {}) intentó acceder a la planta con ID: {}, que pertenece al usuario con ID: {}",
-                    currentUser.getUsername(), currentUser.getId(), planta.getId(), planta.getUser().getId());
-            throw new AccessDeniedException("No tiene permiso para acceder a esta planta.");
+        if (planta.getUser().getId().equals(currentUser.getId())) {
+            return; // Owner of the plant
         }
+
+        // Check if user is an EDITOR collaborator of the sala where the plant lives
+        if (planta.getSala() != null) {
+            try {
+                salaService.checkAccess(planta.getSala(), TipoColaborador.EDITOR);
+                log.debug("Acceso como colaborador EDITOR de sala concedido para planta ID: {}", planta.getId());
+                return;
+            } catch (AccessDeniedException e) {
+                // Not a collaborator of this sala, fall through to denial
+            }
+        }
+
+        log.warn("ACCESO DENEGADO: El usuario '{}' (ID: {}) intentó acceder a la planta con ID: {}, que pertenece al usuario con ID: {}",
+                currentUser.getUsername(), currentUser.getId(), planta.getId(), planta.getUser().getId());
+        throw new AccessDeniedException("No tiene permiso para acceder a esta planta.");
     }
 
     private boolean isAdmin(Authentication authentication) {
@@ -78,6 +100,10 @@ public class PlantaService {
         User currentUser = getCurrentUser();
         log.info("Usuario '{}' creando nueva planta: {}", currentUser.getUsername(), plantaDto.getNombre());
 
+        // Fetch Sala first — needed for both access check and cepa authorization
+        Sala sala = salaRepository.findById(plantaDto.getSalaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + plantaDto.getSalaId()));
+
         // Fetch Cepa and check authorization
         Cepa cepa = cepaRepository.findById(plantaDto.getCepaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cepa no encontrada con id: " + plantaDto.getCepaId()));
@@ -87,20 +113,57 @@ public class PlantaService {
                 .anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN") || role.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         if (!isOwner && !isAdmin) {
-            log.warn("ACCESO DENEGADO: El usuario '{}' intentó crear una planta usando la cepa con ID: {}, que no le pertenece.",
-                    currentUser.getUsername(), cepa.getId());
-            throw new AccessDeniedException("No tienes permiso para usar esta cepa. Solo los dueños o administradores pueden hacerlo.");
+            // Allow EDITOR collaborators to use the sala owner's cepas
+            boolean isEditorInSala = salaColaboradorRepository
+                    .findBySalaIdAndUserId(sala.getId(), currentUser.getId())
+                    .map(sc -> sc.getTipoColaborador() == TipoColaborador.EDITOR)
+                    .orElse(false);
+            boolean isCepaFromSalaOwner = cepa.getUser().getId().equals(sala.getUser().getId());
+            if (!(isEditorInSala && isCepaFromSalaOwner)) {
+                log.warn("ACCESO DENEGADO: El usuario '{}' intentó crear una planta usando la cepa con ID: {}, que no le pertenece.",
+                        currentUser.getUsername(), cepa.getId());
+                throw new AccessDeniedException("No tienes permiso para usar esta cepa. Solo los dueños, administradores o editores colaboradores pueden hacerlo.");
+            }
         }
 
-        // Fetch Sala and check ownership
-        Sala sala = salaRepository.findById(plantaDto.getSalaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + plantaDto.getSalaId()));
-        if (!sala.getUser().getId().equals(currentUser.getId()) && !isAdmin(getAuthentication())) {
-             throw new AccessDeniedException("No tiene permiso para asignar una planta a esta sala.");
+        // Verify sala access (owner or EDITOR collaborator)
+        salaService.checkAccess(sala, TipoColaborador.EDITOR);
+
+
+        // Handle zona assignment and auto-generate ubicacion
+        Zona zona = null;
+        if (plantaDto.getZonaId() != null) {
+            zona = zonaRepository.findById(plantaDto.getZonaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Zona no encontrada con id: " + plantaDto.getZonaId()));
+
+            // Validate column/row within bounds
+            if (plantaDto.getColumnaEnZona() == null || plantaDto.getFilaEnZona() == null) {
+                throw new IllegalArgumentException("Columna y fila son requeridas cuando se asigna una zona.");
+            }
+            if (plantaDto.getColumnaEnZona() < 0 || plantaDto.getColumnaEnZona() >= zona.getColumnas()) {
+                throw new IllegalArgumentException("Columna fuera de los límites de la zona (0-" + (zona.getColumnas() - 1) + ").");
+            }
+            if (plantaDto.getFilaEnZona() < 0 || plantaDto.getFilaEnZona() >= zona.getFilas()) {
+                throw new IllegalArgumentException("Fila fuera de los límites de la zona (0-" + (zona.getFilas() - 1) + ").");
+            }
+
+            // Check cell is not already occupied
+            boolean occupied = plantaRepository.existsByZonaIdAndColumnaEnZonaAndFilaEnZona(
+                    zona.getId(), plantaDto.getColumnaEnZona(), plantaDto.getFilaEnZona());
+            if (occupied) {
+                throw new ResourceAlreadyExistsException(
+                        "La celda (" + plantaDto.getColumnaEnZona() + ", " + plantaDto.getFilaEnZona() +
+                        ") ya está ocupada en la zona '" + zona.getNombre() + "'.");
+            }
+
+            // Auto-generate ubicacion
+            String ubicacion = DtoMapper.generarUbicacion(
+                    zona.getNombre(),
+                    plantaDto.getColumnaEnZona(), plantaDto.getFilaEnZona());
+            plantaDto.setUbicacion(ubicacion);
         }
 
-
-        Planta planta = DtoMapper.plantaDtoToPlanta(new Planta(), plantaDto, cepa, sala);
+        Planta planta = DtoMapper.plantaDtoToPlanta(new Planta(), plantaDto, cepa, sala, zona);
         planta.setUser(currentUser); // Set owner
 
         Planta savedPlanta = plantaRepository.save(planta);
@@ -110,16 +173,9 @@ public class PlantaService {
 
     @Transactional(readOnly = true)
     public List<PlantaDto> getAllPlantas() {
-        Authentication authentication = getAuthentication();
         User currentUser = getCurrentUser();
-
-        if (isAdmin(authentication)) {
-            log.info("Usuario admin '{}' obteniendo todas las plantas del sistema.", currentUser.getUsername());
-            return plantaRepository.findAll().stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
-        } else {
-            log.info("Obteniendo todas las plantas para el usuario '{}'", currentUser.getUsername());
-            return plantaRepository.findByUserId(currentUser.getId()).stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
-        }
+        log.info("Obteniendo todas las plantas para el usuario '{}'", currentUser.getUsername());
+        return plantaRepository.findByUserId(currentUser.getId()).stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -130,6 +186,38 @@ public class PlantaService {
         checkOwnership(planta);
         log.info("Planta con ID: {} encontrada y verificada.", id);
         return DtoMapper.plantaToPlantaDto(planta);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlantaDto> getPublicPlantas() {
+        log.info("Obteniendo plantas públicas");
+        return plantaRepository.findByIsPublicTrue().stream()
+                .map(DtoMapper::plantaToPlantaDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlantaDto> getPublicPlantasByUserId(Long userId) {
+        log.info("Obteniendo plantas públicas del usuario ID: {}", userId);
+        List<PlantaDto> dtos = plantaRepository.findByIsPublicTrueAndUserId(userId).stream()
+                .map(DtoMapper::plantaToPlantaDto)
+                .collect(Collectors.toList());
+
+        // Enrich with favoriteCount
+        if (!dtos.isEmpty()) {
+            List<Long> plantIds = dtos.stream().map(PlantaDto::getId).collect(Collectors.toList());
+            List<Object[]> counts = favoriteRepository.countByFavorableIdsAndType(plantIds, "PLANTA");
+            java.util.Map<Long, Long> countMap = counts.stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            row -> (Long) row[0],
+                            row -> (Long) row[1]
+                    ));
+            dtos.forEach(dto -> dto.setFavoriteCount(
+                    countMap.getOrDefault(dto.getId(), 0L).intValue()
+            ));
+        }
+
+        return dtos;
     }
 
     @Transactional
@@ -163,19 +251,93 @@ public class PlantaService {
             throw new AccessDeniedException("No tienes permiso para usar esta cepa.");
         }
 
-        // Fetch Sala and check ownership
+        // Fetch Sala and check authorization (owner or EDITOR collaborator)
         Sala sala = salaRepository.findById(plantaDto.getSalaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + plantaDto.getSalaId()));
-        if (!sala.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
-             throw new AccessDeniedException("No tiene permiso para asignar una planta a esta sala.");
+        salaService.checkAccess(sala, TipoColaborador.EDITOR);
+
+        // Handle zona assignment
+        Zona zona = null;
+        if (plantaDto.getZonaId() != null) {
+            zona = zonaRepository.findById(plantaDto.getZonaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Zona no encontrada con id: " + plantaDto.getZonaId()));
+
+            // Validate column/row within bounds
+            if (plantaDto.getColumnaEnZona() == null || plantaDto.getFilaEnZona() == null) {
+                throw new IllegalArgumentException("Columna y fila son requeridas cuando se asigna una zona.");
+            }
+            if (plantaDto.getColumnaEnZona() < 0 || plantaDto.getColumnaEnZona() >= zona.getColumnas()) {
+                throw new IllegalArgumentException("Columna fuera de los límites de la zona (0-" + (zona.getColumnas() - 1) + ").");
+            }
+            if (plantaDto.getFilaEnZona() < 0 || plantaDto.getFilaEnZona() >= zona.getFilas()) {
+                throw new IllegalArgumentException("Fila fuera de los límites de la zona (0-" + (zona.getFilas() - 1) + ").");
+            }
+
+            // Check cell occupancy excluding the current plant
+            boolean occupied = plantaRepository.existsOtherAtCell(
+                    zona.getId(), plantaDto.getColumnaEnZona(), plantaDto.getFilaEnZona(), id);
+            if (occupied) {
+                throw new ResourceAlreadyExistsException(
+                        "La celda (" + plantaDto.getColumnaEnZona() + ", " + plantaDto.getFilaEnZona() +
+                        ") ya está ocupada en la zona '" + zona.getNombre() + "'.");
+            }
         }
 
-        // Use the mapper to update the entity
-        Planta updatedPlanta = DtoMapper.plantaDtoToPlanta(existingPlanta, plantaDto, cepa, sala);
+        // Use the mapper to update the entity with the resolved zona
+        Planta updatedPlanta = DtoMapper.plantaDtoToPlanta(existingPlanta, plantaDto, cepa, sala, zona);
         
         plantaRepository.save(updatedPlanta);
         log.info("Planta con ID: {} actualizada con éxito.", updatedPlanta.getId());
         return DtoMapper.plantaToPlantaDto(updatedPlanta);
+    }
+
+    @Transactional
+    public PlantaDto updateUbicacion(Long plantaId, Long zonaId, Integer columna, Integer fila) {
+        log.info("Actualizando ubicación de planta ID: {} a zonaId: {}, columna: {}, fila: {}", plantaId, zonaId, columna, fila);
+        Planta planta = plantaRepository.findById(plantaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId));
+        checkOwnership(planta);
+
+        if (zonaId != null) {
+            Zona zona = zonaRepository.findById(zonaId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Zona no encontrada con id: " + zonaId));
+
+            if (columna == null || fila == null) {
+                throw new IllegalArgumentException("Columna y fila son requeridas cuando se asigna una zona.");
+            }
+            if (columna < 0 || columna >= zona.getColumnas()) {
+                throw new IllegalArgumentException("Columna fuera de los límites de la zona (0-" + (zona.getColumnas() - 1) + ").");
+            }
+            if (fila < 0 || fila >= zona.getFilas()) {
+                throw new IllegalArgumentException("Fila fuera de los límites de la zona (0-" + (zona.getFilas() - 1) + ").");
+            }
+
+            // Check cell occupancy excluding the current plant (allows no-op re-save)
+            boolean occupied = plantaRepository.existsOtherAtCell(zonaId, columna, fila, plantaId);
+            if (occupied) {
+                throw new ResourceAlreadyExistsException(
+                        "La celda (" + columna + ", " + fila + ") ya está ocupada en la zona '" + zona.getNombre() + "'.");
+            }
+
+            planta.setZona(zona);
+            planta.setColumnaEnZona(columna);
+            planta.setFilaEnZona(fila);
+
+            // Auto-generate ubicacion
+            String ubicacion = DtoMapper.generarUbicacion(
+                    zona.getNombre(), columna, fila);
+            planta.setUbicacion(ubicacion);
+        } else {
+            // Removing from grid: clear grid fields and reset ubicacion
+            planta.setZona(null);
+            planta.setColumnaEnZona(null);
+            planta.setFilaEnZona(null);
+            planta.setUbicacion("");
+        }
+
+        Planta savedPlanta = plantaRepository.save(planta);
+        log.info("Ubicación de planta ID: {} actualizada con éxito.", plantaId);
+        return DtoMapper.plantaToPlantaDto(savedPlanta);
     }
 
     // --- Search Methods ---
@@ -257,5 +419,37 @@ public class PlantaService {
                         List<Planta> plantas = plantaRepository.findByUserId(userId);
                         log.info("{} plantas encontradas para el usuario con ID: {}", plantas.size(), userId);
                         return plantas.stream().map(DtoMapper::plantaToPlantaDto).collect(Collectors.toList());
+                    }
+
+                    @Transactional
+                    public void swapPlantasUbicacion(Long plantaId1, Long plantaId2) {
+                        Planta p1 = plantaRepository.findById(plantaId1)
+                                .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId1));
+                        Planta p2 = plantaRepository.findById(plantaId2)
+                                .orElseThrow(() -> new ResourceNotFoundException("Planta no encontrada con id: " + plantaId2));
+
+                        // Verify access to both plants' salas (EDITOR required for swap)
+                        if (p1.getSala() != null) salaService.checkAccess(p1.getSala(), TipoColaborador.EDITOR);
+                        if (p2.getSala() != null) salaService.checkAccess(p2.getSala(), TipoColaborador.EDITOR);
+
+                        // Swap zone assignments
+                        Long tempZonaId = p1.getZona() != null ? p1.getZona().getId() : null;
+                        Integer tempCol = p1.getColumnaEnZona();
+                        Integer tempFila = p1.getFilaEnZona();
+
+                        // Set p1 from p2
+                        p1.setZona(p2.getZona());
+                        p1.setColumnaEnZona(p2.getColumnaEnZona());
+                        p1.setFilaEnZona(p2.getFilaEnZona());
+
+                        // Set p2 from temp (p1's original)
+                        Zona tempZona = tempZonaId != null ? zonaRepository.findById(tempZonaId).orElse(null) : null;
+                        p2.setZona(tempZona);
+                        p2.setColumnaEnZona(tempCol);
+                        p2.setFilaEnZona(tempFila);
+
+                        plantaRepository.save(p1);
+                        plantaRepository.save(p2);
+                        log.info("Swap ubicación: planta {} ↔ planta {}", plantaId1, plantaId2);
                     }
                 }            

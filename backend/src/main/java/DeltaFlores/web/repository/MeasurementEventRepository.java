@@ -33,4 +33,11 @@ public interface MeasurementEventRepository extends JpaRepository<MeasurementEve
      * @return A list of measurement events.
      */
     List<MeasurementEvent> findByFechaAfter(LocalDate fecha);
+
+    /**
+     * Finds all measurement events associated with plants that belong to a specific sala,
+     * after a given date.
+     */
+    @Query("SELECT DISTINCT e FROM MeasurementEvent e JOIN e.plantas p WHERE p.sala.id = :salaId AND e.fecha >= :fromDate ORDER BY e.fecha ASC")
+    List<MeasurementEvent> findBySalaIdAndFechaAfter(@Param("salaId") Long salaId, @Param("fromDate") LocalDate fromDate);
 }

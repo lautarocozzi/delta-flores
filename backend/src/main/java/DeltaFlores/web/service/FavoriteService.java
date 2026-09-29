@@ -68,9 +68,24 @@ public class FavoriteService {
     public List<PlantaDto> getFavoritePlantas() {
         User currentUser = getCurrentUser();
         List<Long> plantIds = favoriteRepository.findFavorableIdsByUserIdAndFavorableType(currentUser.getId(), "PLANTA");
-        return plantaRepository.findAllById(plantIds).stream()
+        List<PlantaDto> dtos = plantaRepository.findAllById(plantIds).stream()
                 .map(DtoMapper::plantaToPlantaDto)
                 .collect(Collectors.toList());
+
+        // Enrich with favoriteCount
+        if (!dtos.isEmpty()) {
+            List<Object[]> counts = favoriteRepository.countByFavorableIdsAndType(plantIds, "PLANTA");
+            java.util.Map<Long, Long> countMap = counts.stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            row -> (Long) row[0],
+                            row -> (Long) row[1]
+                    ));
+            dtos.forEach(dto -> dto.setFavoriteCount(
+                    countMap.getOrDefault(dto.getId(), 0L).intValue()
+            ));
+        }
+
+        return dtos;
     }
 
     @Transactional(readOnly = true)

@@ -9,11 +9,9 @@ import DeltaFlores.web.repository.NutrientEventRepository;
 import DeltaFlores.web.repository.PlantaRepository;
 import DeltaFlores.web.repository.NutrienteRepository;
 import DeltaFlores.web.repository.UserRepository;
-import DeltaFlores.web.service.NutrienteService; // Inyectar NutrienteService
 import DeltaFlores.web.utils.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,9 +33,7 @@ public class NutrientEventService {
     private final NutrientEventRepository nutrientEventRepository;
     private final PlantaRepository plantaRepository;
     private final UserRepository userRepository;
-    //private final NutrienteService nutrienteService; // Inyectar NutrienteService
 
-    @Autowired
     private final NutrienteRepository nutrienteRepository;
 
     private User getCurrentUser() {
@@ -84,19 +80,8 @@ public class NutrientEventService {
     @Transactional(readOnly = true)
     public NutrientEventDto getNutrientEventById(Long id) {
         log.info("\n\n🔎 Buscando evento de nutriente con ID: {}", id);
-        User currentUser = getCurrentUser();
         NutrientEvent event = nutrientEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de nutriente no encontrado con id: " + id));
-
-        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
-
-        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
-            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
-            if (!isOwner) {
-                throw new AccessDeniedException("No tienes permiso para ver este evento.");
-            }
-        }
-
         return (NutrientEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 

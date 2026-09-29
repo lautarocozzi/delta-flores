@@ -2,9 +2,14 @@ package DeltaFlores.web.service;
 
 import DeltaFlores.web.dto.CepaDto;
 import DeltaFlores.web.entities.Cepa;
+import DeltaFlores.web.entities.Sala;
+import DeltaFlores.web.entities.SalaColaborador;
+import DeltaFlores.web.entities.TipoColaborador;
 import DeltaFlores.web.entities.User;
 import DeltaFlores.web.exception.ResourceNotFoundException;
 import DeltaFlores.web.repository.CepaRepository;
+import DeltaFlores.web.repository.SalaColaboradorRepository;
+import DeltaFlores.web.repository.SalaRepository;
 import DeltaFlores.web.repository.UserRepository;
 import DeltaFlores.web.security.CustomUserDetails;
 import DeltaFlores.web.utils.DtoMapper;
@@ -15,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +31,8 @@ public class CepaService {
 
     private final CepaRepository cepaRepository;
     private final UserRepository userRepository;
+    private final SalaRepository salaRepository;
+    private final SalaColaboradorRepository salaColaboradorRepository;
 
     private User getCurrentUser() {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -35,10 +43,12 @@ public class CepaService {
     @Transactional(readOnly = true)
     public List<CepaDto> getCepasForCurrentUser() {
         User currentUser = getCurrentUser();
-        log.info("\n\n\uD83D\uDD0E Buscando todas las cepas para el usuario: {}", currentUser.getUsername());
+        log.info("\n\n\uD83D\uDD0E Buscando cepas para el usuario: {}", currentUser.getUsername());
+
         List<CepaDto> cepas = cepaRepository.findByUserId(currentUser.getId()).stream()
                 .map(DtoMapper::cepaToCepaDto)
                 .collect(Collectors.toList());
+
         log.info("\n\n\u2728 {} cepas encontradas para el usuario: {}", cepas.size(), currentUser.getUsername());
         return cepas;
     }
@@ -150,6 +160,53 @@ public class CepaService {
                 .map(DtoMapper::cepaToCepaDto)
                 .collect(Collectors.toList());
         log.info("\n\n\u2728 {} cepas encontradas para el usuario con ID: {}", cepas.size(), userId);
+        return cepas;
+    }
+
+    /**
+     * Returns cepas visible to the current user for a specific sala:
+     * the sala owner's cepas plus cepas from EDITOR collaborators.
+     * Access is validated: only the owner or EDITOR collaborators can call this.
+     */
+    @Transactional(readOnly = true)
+    public List<CepaDto> getCepasForSala(Long salaId) {
+        log.info("Buscando cepas para la sala con ID: {}", salaId);
+
+        // Fetch sala and validate access
+        Sala sala = salaRepository.findById(salaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada con id: " + salaId));
+
+        User currentUser = getCurrentUser();
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN") || role.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        boolean isOwner = sala.getUser().getId().equals(currentUser.getId());
+        boolean isEditor = isOwner || isAdmin || salaColaboradorRepository
+                .findBySalaIdAndUserId(salaId, currentUser.getId())
+                .map(sc -> sc.getTipoColaborador() == TipoColaborador.EDITOR)
+                .orElse(false);
+
+        if (!isEditor) {
+            log.warn("ACCESO DENEGADO: El usuario '{}' no tiene permiso EDITOR en la sala con ID: {}",
+                    currentUser.getUsername(), salaId);
+            throw new AccessDeniedException("No tiene permiso de edición en esta sala.");
+        }
+
+        // Collect user IDs: sala owner + EDITOR collaborators
+        List<Long> userIds = new ArrayList<>();
+        userIds.add(sala.getUser().getId());
+
+        List<SalaColaborador> colaboradores = salaColaboradorRepository.findBySalaId(salaId);
+        colaboradores.stream()
+                .filter(sc -> sc.getTipoColaborador() == TipoColaborador.EDITOR)
+                .map(sc -> sc.getUser().getId())
+                .forEach(userIds::add);
+
+        // Fetch cepas for all collected user IDs
+        List<CepaDto> cepas = cepaRepository.findByUserIdIn(userIds).stream()
+                .map(DtoMapper::cepaToCepaDto)
+                .collect(Collectors.toList());
+
+        log.info("{} cepas encontradas para la sala con ID: {}", cepas.size(), salaId);
         return cepas;
     }
 }

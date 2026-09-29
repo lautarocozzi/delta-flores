@@ -14,6 +14,7 @@ public interface StageChangeEventRepository extends JpaRepository<StageChangeEve
 
     /**
      * Finds all stage change events associated with a specific plant ID.
+     * 
      * @param plantaId The ID of the plant.
      * @return A list of stage change events.
      */
@@ -22,6 +23,7 @@ public interface StageChangeEventRepository extends JpaRepository<StageChangeEve
 
     /**
      * Finds all stage change events on a specific date.
+     * 
      * @param fecha The date to search for.
      * @return A list of stage change events.
      */
@@ -29,8 +31,20 @@ public interface StageChangeEventRepository extends JpaRepository<StageChangeEve
 
     /**
      * Finds all stage change events after a given date.
+     * 
      * @param fecha The date to search after.
      * @return A list of stage change events.
      */
     List<StageChangeEvent> findByFechaAfter(LocalDate fecha);
+
+    /**
+     * Finds the latest stage change event for a specific plant.
+     * Ordered by date descending and then by ID descending (to handle multiple
+     * events on same day).
+     * 
+     * @param plantaId The ID of the plant.
+     * @return The latest stage change event, or null (wrapped in Optional if
+     *         preferred, but Spring Data nullable return is fine here)
+     */
+    StageChangeEvent findTopByPlantas_IdOrderByFechaDescIdDesc(Long plantaId);
 }

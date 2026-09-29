@@ -2,6 +2,7 @@ package DeltaFlores.web.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,7 +34,9 @@ public class Planta {
     private boolean isPublic = false;
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cepa_id", nullable = false)
     private Cepa cepa;
 
@@ -42,17 +45,26 @@ public class Planta {
     @Enumerated(EnumType.STRING)
     private NuevaEtapa etapa;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zona_id")
+    private Zona zona;
 
+    @Column(name = "columna_en_zona")
+    private Integer columnaEnZona;
+
+    @Column(name = "fila_en_zona")
+    private Integer filaEnZona;
 
     @CreationTimestamp
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
     private LocalDate fechaCreacion;
 
+    @Min(0)
     private int produccion;
 
 
@@ -62,18 +74,12 @@ public class Planta {
 
     private String ubicacion;
 
+    @Column(name = "imagen_url")
+    private String imagenUrl;
+
     @ManyToMany (fetch = FetchType.LAZY, cascade = CascadeType.DETACH)
     @JoinTable(name = "plants_has_events",
             joinColumns = @JoinColumn(name = "planta_id"),
             inverseJoinColumns = @JoinColumn(name = "events_id"))
     private List<PlantEvent> events=new ArrayList<>();
-
-//    public enum etapa {
-//        GERMINACION,
-//        PLANTIN,
-//        VEGETACION,
-//        FLORACION,
-//        COSECHADA
-//    }
-
 }

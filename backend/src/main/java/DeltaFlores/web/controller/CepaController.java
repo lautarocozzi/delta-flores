@@ -6,6 +6,7 @@ import DeltaFlores.web.service.CepaService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -106,6 +107,26 @@ public class CepaController {
             return ResponseEntity.ok(cepas);
         } catch (Exception e) {
             log.error("\n\n[Capa Controller] \u274C Error al obtener las cepas para el usuario con ID {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/sala/{salaId}")
+    @PreAuthorize("hasAnyRole('GROWER', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<List<CepaDto>> getCepasBySala(@PathVariable Long salaId) {
+        log.info("[Cepa Controller] Solicitud para obtener cepas de la sala con ID: {}", salaId);
+        try {
+            List<CepaDto> cepas = cepaService.getCepasForSala(salaId);
+            log.info("[Cepa Controller] {} cepas obtenidas para la sala con ID: {}", cepas.size(), salaId);
+            return ResponseEntity.ok(cepas);
+        } catch (ResourceNotFoundException e) {
+            log.warn("[Cepa Controller] Sala no encontrada con ID: {}", salaId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (AccessDeniedException e) {
+            log.warn("[Cepa Controller] Acceso denegado para la sala con ID: {}", salaId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            log.error("[Cepa Controller] Error al obtener cepas para la sala con ID {}: {}", salaId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

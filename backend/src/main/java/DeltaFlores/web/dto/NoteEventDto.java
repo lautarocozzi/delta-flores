@@ -1,18 +1,14 @@
 package DeltaFlores.web.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class NoteEventDto extends PlantEventDto  {
+public class NoteEventDto extends PlantEventDto {
     private String text;
-    @JsonIgnore
-    private List<MultipartFile> files;
     private List<String> mediaUrls;
 }

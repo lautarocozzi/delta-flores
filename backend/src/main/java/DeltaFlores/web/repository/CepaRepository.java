@@ -12,6 +12,8 @@ public interface CepaRepository extends JpaRepository<Cepa,Long> {
     Optional<Cepa> findById(Long id);
 
     List<Cepa> findByUserId(Long userId);
+
+    List<Cepa> findByUserIdIn(List<Long> userIds);
     
     List<Cepa> findByGeneticaParentalContaining(String palabraClave);
     List<Cepa> findByDominanciaContaining(String palabraClave);

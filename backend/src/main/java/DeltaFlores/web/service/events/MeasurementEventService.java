@@ -86,19 +86,8 @@ public class MeasurementEventService {
     @Transactional(readOnly = true)
     public MeasurementEventDto getMeasurementEventById(Long id) {
         log.info("\n\n\ud83d\udd0e Buscando evento de medición con ID: {}", id);
-        User currentUser = getCurrentUser();
         MeasurementEvent event = measurementEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de medición no encontrado con id: " + id));
-
-        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
-
-        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
-            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
-            if (!isOwner) {
-                throw new AccessDeniedException("No tienes permiso para ver este evento.");
-            }
-        }
-
         return (MeasurementEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 

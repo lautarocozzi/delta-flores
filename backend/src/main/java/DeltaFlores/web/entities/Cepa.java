@@ -23,6 +23,10 @@ public class Cepa {
     private String cbd;
     private String detalle;
 
+    // TODO: Add NOT NULL constraint after backfilling existing rows
+    @Column(unique = true, length = 10)
+    private String abreviatura;
+
     @OneToMany(mappedBy = "cepa", fetch = FetchType.LAZY)
     private List<Planta> plantas = new ArrayList<>();
 
@@ -33,7 +37,7 @@ public class Cepa {
 
     @Override
     public String toString() {
-        return "Semilla{" +
+        return "Cepa{" +
                 "id=" + id +
                 ", geneticaParental='" + geneticaParental + '\'' +
                 ", dominancia='" + dominancia + '\'' +

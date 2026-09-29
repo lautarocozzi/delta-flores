@@ -3,7 +3,7 @@ package DeltaFlores.web.entities;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-        import lombok.Getter;
+import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,23 +20,18 @@ import java.util.List;
 @DiscriminatorColumn(name = "event_type")
 public abstract class PlantEvent {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JsonIgnore
-    @JoinTable(
-            name = "plants_has_events",
-            joinColumns = @JoinColumn(name = "events_id"),
-            inverseJoinColumns = @JoinColumn(name = "planta_id"))
-    private List<Planta> plantas=new ArrayList<>();
+        @ManyToMany(fetch = FetchType.LAZY)
+        @JsonIgnore
+        @JoinTable(name = "plants_has_events", joinColumns = @JoinColumn(name = "events_id"), inverseJoinColumns = @JoinColumn(name = "planta_id"))
+        private List<Planta> plantas = new ArrayList<>();
 
-    @CreationTimestamp
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
-    private LocalDate fecha;
-
-
+        @CreationTimestamp
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+        private LocalDate fecha;
 
 }

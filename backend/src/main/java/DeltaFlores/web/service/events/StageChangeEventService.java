@@ -53,13 +53,15 @@ public class StageChangeEventService {
             if (plantas.size() != dto.getPlantaIds().size()) {
                 log.warn("\u26A0️ Algunos IDs de plantas no fueron encontrados al crear el evento.");
             }
-            event.setPlantas(plantas);
-            
-            // Set viejaEtapa from the first plant if available
+
+            // DEDUCIR ETAPA ANTERIOR: Tomamos la etapa de la primera planta como referencia
+            // Asumimos que si se aplica un cambio masivo, todas estaban en la misma etapa o
+            // tomamos la representativa.
             if (!plantas.isEmpty()) {
-                event.setViejaEtapa(plantas.get(0).getEtapa());
+                event.setEtapaAnterior(plantas.get(0).getEtapa());
             }
 
+            event.setPlantas(plantas);
             // Update planta's etapa
             for (Planta planta : plantas) {
                 planta.setEtapa(dto.getNuevaEtapa());
@@ -78,19 +80,9 @@ public class StageChangeEventService {
     @Transactional(readOnly = true)
     public StageChangeEventDto getStageChangeEventById(Long id) {
         log.info("\n\n🔎 Buscando evento de cambio de etapa con ID: {}", id);
-        User currentUser = getCurrentUser();
         StageChangeEvent event = stageChangeEventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
-
-        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
-
-        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
-            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
-            if (!isOwner) {
-                throw new AccessDeniedException("No tienes permiso para ver este evento.");
-            }
-        }
-        
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
         return (StageChangeEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 
@@ -131,7 +123,8 @@ public class StageChangeEventService {
         log.info("\n\n⬆️ Actualizando evento de cambio de etapa con ID: {}", id);
         User currentUser = getCurrentUser();
         StageChangeEvent existingEvent = stageChangeEventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
 
         if (currentUser.getRol() == AppRole.ROLE_GROWER) {
             for (Planta planta : existingEvent.getPlantas()) {
@@ -146,16 +139,10 @@ public class StageChangeEventService {
 
         if (dto.getPlantaIds() != null) {
             List<Planta> plantas = plantaRepository.findAllById(dto.getPlantaIds());
-             if (plantas.size() != dto.getPlantaIds().size()) {
+            if (plantas.size() != dto.getPlantaIds().size()) {
                 log.warn("\u26A0️ Algunos IDs de plantas no fueron encontrados al actualizar el evento.");
             }
             existingEvent.setPlantas(plantas);
-            
-            // Set viejaEtapa from the first plant if available
-            if (!plantas.isEmpty()) {
-                existingEvent.setViejaEtapa(plantas.get(0).getEtapa());
-            }
-
             // Update planta's etapa
             for (Planta planta : plantas) {
                 planta.setEtapa(dto.getNuevaEtapa());
@@ -174,8 +161,9 @@ public class StageChangeEventService {
         log.info("\n\n🗑️ Eliminando evento de cambio de etapa con ID: {}", id);
         User currentUser = getCurrentUser();
         StageChangeEvent event = stageChangeEventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
-        
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Evento de cambio de etapa no encontrado con id: " + id));
+
         if (currentUser.getRol() == AppRole.ROLE_GROWER) {
             for (Planta planta : event.getPlantas()) {
                 if (!planta.getUser().equals(currentUser)) {
@@ -184,7 +172,31 @@ public class StageChangeEventService {
             }
         }
 
+        // Capture affected plants before deleting the event
+        List<Planta> affectedPlantas = event.getPlantas();
+
         stageChangeEventRepository.deleteById(id);
         log.info("\n\n✨ Evento de cambio de etapa con ID: {} eliminado.", id);
+
+        // ROBUST REVERSION LOGIC
+        // For each affected plant, find the latest remaining event and restore its
+        // stage.
+        for (Planta planta : affectedPlantas) {
+            StageChangeEvent latestEvent = stageChangeEventRepository
+                    .findTopByPlantas_IdOrderByFechaDescIdDesc(planta.getId());
+
+            if (latestEvent != null) {
+                // If there is history, restore the stage from the latest event
+                log.info("\n\n🔄 Revertiendo planta {} a etapa histórica: {}", planta.getNombre(),
+                        latestEvent.getNuevaEtapa());
+                planta.setEtapa(latestEvent.getNuevaEtapa());
+            } else {
+                // If no history remains, revert to default (GERMINACION)
+                log.info("\n\n🔄 Sin historial previo. Revertiendo planta {} a etapa inicial: GERMINACION",
+                        planta.getNombre());
+                planta.setEtapa(DeltaFlores.web.entities.NuevaEtapa.GERMINACION);
+            }
+            plantaRepository.save(planta);
+        }
     }
 }

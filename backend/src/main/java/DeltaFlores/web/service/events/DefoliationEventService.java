@@ -61,19 +61,8 @@ public class DefoliationEventService {
     @Transactional(readOnly = true)
     public DefoliationEventDto getDefoliationEventById(Long id) {
         log.info("\n\n\uD83D\uDD0E Buscando evento de defoliación con ID: {}", id);
-        User currentUser = getCurrentUser();
         DefoliationEvent event = defoliationEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de defoliación no encontrado con id: " + id));
-
-        boolean isPublic = event.getPlantas().stream().anyMatch(Planta::isPublic);
-
-        if (!isPublic && currentUser.getRol() == AppRole.ROLE_GROWER) {
-            boolean isOwner = event.getPlantas().stream().allMatch(planta -> planta.getUser().equals(currentUser));
-            if (!isOwner) {
-                throw new AccessDeniedException("No tienes permiso para ver este evento.");
-            }
-        }
-        
         return (DefoliationEventDto) DtoMapper.plantEventToPlantEventDto(event);
     }
 
