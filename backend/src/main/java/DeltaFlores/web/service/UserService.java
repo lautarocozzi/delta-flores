@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +31,7 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder bCryptPasswordEncoder;
-    // private final EmailTemplateService emailTemplateService; // Comentado si no se usa
+    private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
     public List<UserDto> obtenerTodosLosUsuarios(){
@@ -65,17 +66,26 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDto registerUser(UserToRegisterDto userToRegisterDto) {
         log.info("\n\n\uD83D\uDCBE Registrando nuevo usuario: {}", userToRegisterDto.getEmail());
-        if (userRepository.findByUsername(userToRegisterDto.getEmail()).isPresent()) {
+
+        // Validate email uniqueness
+        if (userRepository.findByEmail(userToRegisterDto.getEmail()).isPresent()) {
             log.warn("\n\n\u26A0\uFE0F El email {} ya está registrado.", userToRegisterDto.getEmail());
             throw new IllegalStateException("El email ya está registrado.");
         }
 
+        // Validate username uniqueness
+        if (userRepository.findByUsername(userToRegisterDto.getUsername()).isPresent()) {
+            log.warn("\n\n\u26A0\uFE0F El username {} ya está en uso.", userToRegisterDto.getUsername());
+            throw new IllegalStateException("El nombre de usuario ya está en uso.");
+        }
+
         User user = new User();
-        user.setUsername(userToRegisterDto.getEmail());
+        user.setEmail(userToRegisterDto.getEmail());
+        user.setUsername(userToRegisterDto.getUsername());
         user.setNombre(userToRegisterDto.getNombre());
         user.setApellido(userToRegisterDto.getApellido());
         user.setPassword(bCryptPasswordEncoder.encode(userToRegisterDto.getPassword()));
-        user.setRol(DeltaFlores.web.entities.AppRole.ROLE_GROWER);
+        user.setRol(AppRole.ROLE_GROWER);
 
         User savedUser = userRepository.save(user);
         log.info("\n\n\u2728 Usuario registrado con éxito con ID: {}", savedUser.getId());
@@ -93,11 +103,64 @@ public class UserService implements UserDetailsService {
 
         existingUser.setNombre(userDto.getNombre());
         existingUser.setApellido(userDto.getApellido());
-        // Username and Role might be updated through specific flows, not general update
-        // Password update should be a separate method due to encoding
 
         User updatedUser = userRepository.save(existingUser);
         log.info("\n\n\u2728 Usuario con ID: {} actualizado.", updatedUser.getId());
+        return DtoMapper.userToUserDto(updatedUser);
+    }
+
+    @Transactional
+    public UserDto updateProfile(Long id, String username, String nombre, String apellido) {
+        log.info("\n\n\u2B06\uFE0F Actualizando perfil del usuario con ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+
+        // Validate username uniqueness if changed
+        if (username != null && !username.equals(user.getUsername())) {
+            if (userRepository.existsByUsername(username)) {
+                throw new IllegalStateException("El nombre de usuario ya está en uso.");
+            }
+            user.setUsername(username);
+        }
+
+        if (nombre != null) user.setNombre(nombre);
+        if (apellido != null) user.setApellido(apellido);
+
+        User updatedUser = userRepository.save(user);
+        log.info("\n\n\u2728 Perfil del usuario con ID: {} actualizado.", id);
+        return DtoMapper.userToUserDto(updatedUser);
+    }
+
+    @Transactional
+    public void updatePassword(Long id, String currentPassword, String newPassword) {
+        log.info("\n\n\uD83D\uDD10 Cambiando contraseña del usuario con ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+
+        if (!bCryptPasswordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalStateException("La contraseña actual es incorrecta.");
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalStateException("La contraseña debe tener al menos 8 caracteres.");
+        }
+
+        user.setPassword(bCryptPasswordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("\n\n✨ Contraseña del usuario con ID: {} actualizada.", id);
+    }
+
+    @Transactional
+    public UserDto uploadProfileImage(Long id, MultipartFile file) {
+        log.info("\n\n\uD83D\uDCF7 Subiendo imagen de perfil para usuario con ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+
+        String imageUrl = fileStorageService.uploadFile(file);
+        user.setImagenUrl(imageUrl);
+
+        User updatedUser = userRepository.save(user);
+        log.info("\n\n\u2728 Imagen de perfil actualizada para usuario con ID: {}", id);
         return DtoMapper.userToUserDto(updatedUser);
     }
 
@@ -128,14 +191,31 @@ public class UserService implements UserDetailsService {
         log.info("\n\n\u2728 Usuario con ID: {} eliminado con éxito.", id);
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getPublicProfileByUsername(String username) {
+        log.info("\n\n\uD83D\uDD0D Buscando perfil público por username: {}", username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con username: " + username));
+        UserDto dto = DtoMapper.userToUserDto(user);
+        dto.setEmail(null); // Excluir email del perfil público
+        return dto;
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        // Try by email first (login is by email), then by username
+        User user = userRepository.findByEmail(username)
+                .orElseGet(() -> userRepository.findByUsername(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found with username/email: " + username)));
 
         return new DeltaFlores.web.security.CustomUserDetails(
                 user.getId(),
-                user.getUsername(),
+                user.getEmail(),
                 user.getPassword(),
                 user.getAuthorities()
         );

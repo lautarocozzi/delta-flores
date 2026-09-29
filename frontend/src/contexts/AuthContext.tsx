@@ -15,6 +15,8 @@ interface AuthState {
         id: number | null;
         nombre?: string;
         apellido?: string;
+        username?: string;
+        imagenUrl?: string;
     } | null;
     isAuthenticated: boolean;
 }
@@ -47,6 +49,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 interface AuthContextType extends AuthState {
     login: (credentials: { email: string; password: string }) => Promise<any>;
     logout: () => Promise<void>;
+    dispatch: React.Dispatch<AuthAction>;
     loading: boolean;
 }
 
@@ -78,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const meResponse = await api.get('/api/auth/me');
                 userProfile = meResponse.data;
             } catch {
-                // If /me fails, use minimal data from refresh
+                // If /me fails during restore, use minimal data from refresh
             }
 
             dispatch({
@@ -86,9 +89,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 payload: {
                     email: username,
                     role: role || 'ROLE_GROWER',
-                    id: user_id,
+                    id: userProfile?.id ?? user_id,
                     nombre: userProfile?.nombre,
                     apellido: userProfile?.apellido,
+                    username: userProfile?.username,
+                    imagenUrl: userProfile?.imagenUrl,
                 },
             });
 
@@ -180,12 +185,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, [stopRefreshInterval]);
 
     // ─── Login ───────────────────────────────────
-    const login = async (credentials: { email: string; password: string }) => {
+    const login = async (credentials: { email: string; password: string }): Promise<{ access_token: string }> => {
         try {
             const payload = { username: credentials.email, password: credentials.password };
             const response = await api.post('/login', payload);
 
-            const { access_token, username, roles } = response.data;
+            const { access_token, username, roles, user_id } = response.data;
             const role = roles && roles.length > 0 ? roles[0].authority : 'ROLE_GROWER';
 
             // Store access token in memory
@@ -203,9 +208,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const user = {
                 email: username,
                 role: role,
-                id: userProfile?.id || null,
+                id: userProfile?.id ?? user_id ?? null,
                 nombre: userProfile?.nombre,
                 apellido: userProfile?.apellido,
+                username: userProfile?.username,
+                imagenUrl: userProfile?.imagenUrl,
             };
 
             dispatch({ type: 'LOGIN', payload: user });
@@ -213,8 +220,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             authChannel?.postMessage({ type: 'LOGIN' });
 
             return response;
-        } catch (error: any) {
-            if (error.response?.status === 401) {
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message.includes('401')) {
                 throw new Error('Credenciales incorrectas. Verifica tu email y contraseña.');
             }
             throw error;
@@ -241,6 +248,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             isAuthenticated: state.isAuthenticated,
             login,
             logout,
+            dispatch,
             loading,
         }}>
             {children}
