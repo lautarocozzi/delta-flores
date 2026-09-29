@@ -34,12 +34,17 @@ import { Loader2, Plus, Pencil, Trash2, MapPin, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FormularioSala } from "@/components/forms/FormularioSala";
 import { ColaboradoresManager } from "@/components/panels/ColaboradoresManager";
+import { FormularioSalaInfo } from "@/components/sala/FormularioSalaInfo";
+import { FormularioSalaZonas } from "@/components/sala/FormularioSalaZonas";
 
 export const SalasManager = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingSala, setEditingSala] = useState<SalaDto | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
     const [colaboradoresSala, setColaboradoresSala] = useState<SalaDto | null>(null);
+    // Edit modal state (unified with ProfilePage)
+    const [editSala, setEditSala] = useState<SalaDto | null>(null);
+    const [infoOpen, setInfoOpen] = useState(false);
+    const [zonasOpen, setZonasOpen] = useState(false);
 
     const queryClient = useQueryClient();
     const { toast } = useToast();
@@ -81,32 +86,23 @@ export const SalasManager = () => {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium">Listado de Salas</h3>
-                <Dialog open={isDialogOpen} onOpenChange={(open) => {
-                    setIsDialogOpen(open);
-                    if (!open) setEditingSala(null);
-                }}>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button onClick={() => setEditingSala(null)}>
+                        <Button>
                             <Plus className="w-4 h-4 mr-2" /> Nueva Sala
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>
-                                {editingSala ? `Editar: ${editingSala.nombre}` : 'Crear Nueva Sala'}
-                            </DialogTitle>
+                            <DialogTitle>Crear Nueva Sala</DialogTitle>
                             <DialogDescription>
-                                {editingSala
-                                    ? 'Modificá los datos de la sala, su imagen y configuración de zonas.'
-                                    : 'Completa los datos para crear una nueva sala'}
+                                Completa los datos para crear una nueva sala
                             </DialogDescription>
                         </DialogHeader>
                         <FormularioSala
-                            mode={editingSala ? 'edit' : 'create'}
-                            initialData={editingSala || undefined}
+                            mode="create"
                             onSuccess={() => {
                                 setIsDialogOpen(false);
-                                setEditingSala(null);
                             }}
                         />
                     </DialogContent>
@@ -149,12 +145,24 @@ export const SalasManager = () => {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => {
-                                                    setEditingSala(sala);
-                                                    setIsDialogOpen(true);
+                                                    setEditSala(sala);
+                                                    setInfoOpen(true);
                                                 }}
                                             >
                                                 <Pencil className="w-4 h-4 mr-1" />
                                                 Editar
+                                            </Button>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setEditSala(sala);
+                                                    setZonasOpen(true);
+                                                }}
+                                            >
+                                                <MapPin className="w-4 h-4 mr-1" />
+                                                Zonas
                                             </Button>
 
                                             <Button
@@ -222,6 +230,26 @@ export const SalasManager = () => {
                     if (!open) setColaboradoresSala(null);
                 }}
             />
+
+            {/* ─── Edit Sala Info Modal (unified with ProfilePage) ─── */}
+            {editSala && (
+                <FormularioSalaInfo
+                    key={`info-${editSala.id}`}
+                    open={infoOpen}
+                    onOpenChange={(open) => { setInfoOpen(open); if (!open) setEditSala(null); }}
+                    sala={editSala}
+                />
+            )}
+
+            {/* ─── Edit Sala Zonas Modal (unified with ProfilePage) ─── */}
+            {editSala && (
+                <FormularioSalaZonas
+                    key={`zonas-${editSala.id}`}
+                    open={zonasOpen}
+                    onOpenChange={(open) => { setZonasOpen(open); if (!open) setEditSala(null); }}
+                    sala={editSala}
+                />
+            )}
         </div>
     );
 };

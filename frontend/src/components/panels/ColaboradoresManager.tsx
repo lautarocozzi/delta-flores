@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
-import { SalaColaboradorDto, UserDto } from "@/interfaces/Planta";
+import { SalaColaboradorDto } from "@/interfaces/Planta";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     Dialog,
     DialogContent,
@@ -39,7 +40,7 @@ export const ColaboradoresManager = ({
     const { user } = useAuthContext();
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const [selectedUserId, setSelectedUserId] = useState("");
+    const [email, setEmail] = useState("");
     const [selectedTipo, setSelectedTipo] = useState<"EDITOR" | "LECTURA">("EDITOR");
 
     const isOwner = user?.id === salaUserId;
@@ -52,18 +53,8 @@ export const ColaboradoresManager = ({
         enabled: open,
     });
 
-    const { data: users = [] } = useQuery<UserDto[]>({
-        queryKey: ["users"],
-        queryFn: apiService.getUsers,
-        enabled: open && canManage,
-    });
-
-    const availableUsers = users.filter(
-        (u) => u.id !== salaUserId && !colaboradores.some((c) => c.userId === u.id)
-    );
-
     const addMutation = useMutation({
-        mutationFn: () => apiService.agregarColaborador(salaId, Number(selectedUserId), selectedTipo),
+        mutationFn: () => apiService.agregarColaborador(salaId, email.trim(), selectedTipo),
         onSuccess: (data) => {
             const tipoLabel = data.tipoColaborador === "LECTURA" ? "solo lectura" : "editor";
             toast({
@@ -71,7 +62,7 @@ export const ColaboradoresManager = ({
                 description: `${data.userNombre} ${data.userApellido} ahora es colaborador (${tipoLabel}) de "${salaNombre}".`,
             });
             queryClient.invalidateQueries({ queryKey: ["colaboradores", salaId] });
-            setSelectedUserId("");
+            setEmail("");
             setSelectedTipo("EDITOR");
         },
         onError: (err: any) => {
@@ -184,27 +175,13 @@ export const ColaboradoresManager = ({
                                     Agregar colaborador
                                 </h4>
                                 <div className="flex gap-2 mb-2">
-                                    <Select
-                                        value={selectedUserId}
-                                        onValueChange={setSelectedUserId}
-                                    >
-                                        <SelectTrigger className="flex-1">
-                                            <SelectValue placeholder="Seleccionar usuario..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableUsers.length === 0 ? (
-                                                <SelectItem value="__none__" disabled>
-                                                    No hay usuarios disponibles
-                                                </SelectItem>
-                                            ) : (
-                                                availableUsers.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id.toString()}>
-                                                        {u.nombre} {u.apellido} (@{u.username})
-                                                    </SelectItem>
-                                                ))
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                    <Input
+                                        type="email"
+                                        placeholder="Email del usuario..."
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="flex-1"
+                                    />
                                     <Select
                                         value={selectedTipo}
                                         onValueChange={(v) => setSelectedTipo(v as "EDITOR" | "LECTURA")}
@@ -230,7 +207,7 @@ export const ColaboradoresManager = ({
                                 </div>
                                 <Button
                                     onClick={() => addMutation.mutate()}
-                                    disabled={!selectedUserId || addMutation.isPending}
+                                    disabled={!email.trim() || addMutation.isPending}
                                     className="w-full"
                                 >
                                     {addMutation.isPending ? (

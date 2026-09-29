@@ -1,36 +1,65 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layouts/AppSidebar";
 import { PlantCard } from "@/components/dashboard/PlantCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MapPin, Thermometer, Droplets, Sun, Plus, ArrowLeft, Leaf } from "lucide-react";
-import { useDirectAccessMenuStore } from "@/stores/useDirectAccessMenuStore";
+import { useRegistroEventoFormStore } from "@/stores/useRegistroEventoFormStore";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { UnifiedSalaView } from "@/components/sala/UnifiedSalaView";
+import { ZonaGridModal } from "@/components/sala/ZonaGridModal";
+import { usePlantas } from "@/hooks/usePlantas";
+import type { ZonaDto } from "@/interfaces/Planta";
 
 export default function SalaDetailPage() {
-    const { salaId } = useParams<{ salaId: string }>();
+    const { username, salaId } = useParams<{ username: string; salaId: string }>();
     const navigate = useNavigate();
-    const { openMenuAndSelectTool } = useDirectAccessMenuStore();
+    const { user } = useAuthContext();
+    const { openMenuAndSelectTool } = useRegistroEventoFormStore();
+    const salaIdNum = Number(salaId);
+    const [selectedZonaId, setSelectedZonaId] = useState<number | null>(null);
 
     const { data: sala, isLoading: isLoadingSala } = useQuery({
-        queryKey: ['sala', salaId],
-        queryFn: () => apiService.getSalaById(Number(salaId)),
-        enabled: !!salaId,
+        queryKey: ['sala', username, salaId],
+        queryFn: () => apiService.getSalaByUsernameAndId(username!, salaIdNum),
+        enabled: !!username && !!salaId,
     });
+
+    // User can edit if: owner, admin, or super admin
+    const canEdit = sala && user && (
+        sala.userId === user.id ||
+        user.role === 'ROLE_ADMIN' ||
+        user.role === 'ROLE_SUPER_ADMIN'
+    );
 
     const { data: plantasEnSala = [], isLoading: isLoadingPlantas } = useQuery({
         queryKey: ['plantas-sala', salaId],
-        queryFn: () => apiService.getPlantasBySala(Number(salaId)),
+        queryFn: () => apiService.getPlantasBySala(salaIdNum),
         enabled: !!salaId,
     });
+
+    // Zones for visual view
+    const { data: zonas = [] } = useQuery<ZonaDto[]>({
+        queryKey: ["zonas", "sala", salaIdNum],
+        queryFn: () => apiService.getZonasBySala(salaIdNum),
+        enabled: !!salaIdNum,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // Plants by zone for visual view
+    const { byZona } = usePlantas(salaIdNum);
+
+    const selectedZona = zonas.find(z => z.id === selectedZonaId) ?? null;
 
     const handleAddPlant = () => {
         // Pass salaId as context to preload in form
         openMenuAndSelectTool('nueva-planta');
-        // TODO: Need to modify DirectAccessMenu to accept and pass contextSalaId
+        // TODO: Need to modify RegistroEventoForm to accept and pass contextSalaId
         // For now, user can manually select the sala from dropdown
     };
 
@@ -65,6 +94,7 @@ export default function SalaDetailPage() {
     }
 
     return (
+        <>
         <SidebarProvider>
             <div className="min-h-screen w-full flex bg-background">
                 <AppSidebar />
@@ -86,10 +116,12 @@ export default function SalaDetailPage() {
                                     </p>
                                 </div>
                             </div>
-                            <Button onClick={handleAddPlant}>
-                                <Plus className="mr-2" size={16} />
-                                Añadir Planta
-                            </Button>
+                            {canEdit && (
+                                <Button onClick={handleAddPlant}>
+                                    <Plus className="mr-2" size={16} />
+                                    Añadir Planta
+                                </Button>
+                            )}
                         </div>
                     </header>
 
@@ -144,6 +176,13 @@ export default function SalaDetailPage() {
                             </CardContent>
                         </Card>
 
+                        {/* Zone Map */}
+                        <UnifiedSalaView
+                            zonas={zonas}
+                            salaId={salaIdNum}
+                            onZonaClick={(zonaId) => setSelectedZonaId(zonaId)}
+                        />
+
                         {/* Plants Section */}
                         <Card>
                             <CardHeader>
@@ -157,20 +196,24 @@ export default function SalaDetailPage() {
                                             {plantasEnSala.length} {plantasEnSala.length === 1 ? 'planta asignada' : 'plantas asignadas'}
                                         </CardDescription>
                                     </div>
-                                    <Button variant="outline" onClick={handleAddPlant}>
-                                        <Plus className="mr-2" size={16} />
-                                        Nueva Planta
-                                    </Button>
+                                    {canEdit && (
+                                        <Button variant="outline" onClick={handleAddPlant}>
+                                            <Plus className="mr-2" size={16} />
+                                            Nueva Planta
+                                        </Button>
+                                    )}
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 {plantasEnSala.length === 0 ? (
                                     <div className="text-center py-8">
                                         <p className="text-muted-foreground mb-4">No hay plantas asignadas a esta sala aún.</p>
-                                        <Button onClick={handleAddPlant}>
-                                            <Plus className="mr-2" size={16} />
-                                            Añadir Primera Planta
-                                        </Button>
+                                        {canEdit && (
+                                            <Button onClick={handleAddPlant}>
+                                                <Plus className="mr-2" size={16} />
+                                                Añadir Primera Planta
+                                            </Button>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="px-12">
@@ -187,6 +230,8 @@ export default function SalaDetailPage() {
                                                                 health={0}
                                                                 fechaCreacion={planta.fechaCreacion}
                                                                 tipoAmbiente={sala?.tipoAmbiente}
+                                                                favoriteCount={(planta as any).favoriteCount}
+                                                                userId={(planta as any).userId}
                                                             />
                                                         </div>
                                                     </CarouselItem>
@@ -203,5 +248,20 @@ export default function SalaDetailPage() {
                 </div>
             </div>
         </SidebarProvider>
+
+        {/* ─── Zona Grid Modal ─────────────────────────── */}
+        {selectedZona !== null && (
+            <ZonaGridModal
+                zona={selectedZona}
+                plantas={byZona(selectedZonaId!)}
+                open={selectedZonaId !== null}
+                onClose={() => setSelectedZonaId(null)}
+                salaId={salaIdNum}
+                salaNombre={sala?.nombre ?? ""}
+                zonas={zonas}
+                allPlantasByZona={byZona}
+            />
+        )}
+    </>
     );
 }

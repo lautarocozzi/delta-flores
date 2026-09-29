@@ -28,6 +28,7 @@ interface ZoneGridProps {
   zonas: ZonaDto[];
   occupiedCells?: Record<string, { plantaNombre: string; plantaId: number }>;
   onCellSelect?: (cell: CellClickPayload) => void;
+  onPlantClick?: (plantaId: number) => void;
   selectedCell?: SelectedCell | null;
   editable?: boolean;
   salaNombre?: string;
@@ -62,6 +63,7 @@ interface CellProps {
   isSelected: boolean;
   editable: boolean;
   onCellSelect?: (cell: CellClickPayload) => void;
+  onPlantClick?: (plantaId: number) => void;
 }
 
 const Cell = React.memo(function Cell({
@@ -75,11 +77,15 @@ const Cell = React.memo(function Cell({
   isSelected,
   editable,
   onCellSelect,
+  onPlantClick,
 }: CellProps) {
   const handleClick = () => {
-    if (isOccupied) return;
+    if (isOccupied) {
+      if (onPlantClick && plantaId) onPlantClick(plantaId);
+      return;
+    }
     if (!editable || !onCellSelect) return;
-    onCellSelect({ zonaId, columna, fila, zonaNombre });
+    onCellSelect({ zonaId, columna: columna, fila, zonaNombre });
   };
 
   // Occupied cell — show plant name abbreviation
@@ -90,9 +96,12 @@ const Cell = React.memo(function Cell({
           <div
             className={cn(
               "flex items-center justify-center rounded-md border",
-              "bg-muted/40 border-border/50 cursor-default select-none",
-              "h-full w-full text-xs text-muted-foreground",
+              onPlantClick
+                ? "bg-primary/15 border-primary/40 cursor-pointer hover:bg-primary/25"
+                : "bg-muted/40 border-border/50 cursor-default",
+              "select-none h-full w-full text-xs text-muted-foreground",
             )}
+            onClick={handleClick}
           >
             <span className="truncate px-1 font-mono">
               {plantaNombre || "—"}
@@ -100,7 +109,7 @@ const Cell = React.memo(function Cell({
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
-          <p>{plantaNombre}</p>
+          <p>{onPlantClick ? "Click para seleccionar" : plantaNombre}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -146,6 +155,7 @@ interface ZoneSectionProps {
   selectedCell?: SelectedCell | null;
   editable: boolean;
   onCellSelect?: (cell: CellClickPayload) => void;
+  onPlantClick?: (plantaId: number) => void;
   cellSize: number;
   gap: number;
 }
@@ -156,6 +166,7 @@ const ZoneSection = React.memo(function ZoneSection({
   selectedCell,
   editable,
   onCellSelect,
+  onPlantClick,
   cellSize,
   gap,
 }: ZoneSectionProps) {
@@ -186,12 +197,13 @@ const ZoneSection = React.memo(function ZoneSection({
             isSelected={isSelected}
             editable={editable}
             onCellSelect={onCellSelect}
+            onPlantClick={onPlantClick}
           />,
         );
       }
     }
     return result;
-  }, [id, nombre, columnas, filas, occupiedCells, selectedCell, editable, onCellSelect]);
+  }, [id, nombre, columnas, filas, occupiedCells, selectedCell, editable, onCellSelect, onPlantClick]);
 
   return (
     <div
@@ -237,6 +249,7 @@ function ZoneGrid({
   zonas,
   occupiedCells = {},
   onCellSelect,
+  onPlantClick,
   selectedCell,
   editable = false,
   salaNombre,
@@ -308,6 +321,7 @@ function ZoneGrid({
             selectedCell={selectedCell}
             editable={editable}
             onCellSelect={onCellSelect}
+            onPlantClick={onPlantClick}
             cellSize={CELL_SIZE}
             gap={GRID_GAP}
           />

@@ -15,4 +15,6 @@ public interface SalaRepository extends JpaRepository<Sala, Long> {
      * @return Una lista de salas pertenecientes al usuario.
      */
     List<Sala> findByUserId(Long userId);
+
+    List<Sala> findByIsPublicTrueAndUserId(Long userId);
 }
