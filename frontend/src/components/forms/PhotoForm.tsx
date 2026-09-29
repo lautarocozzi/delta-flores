@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Camera, CheckCircle, ArrowLeft, Upload, Loader2, XCircle } from "lucide-react";
+import { Camera, Video, CheckCircle, ArrowLeft, Upload, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -25,16 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto } from "@/interfaces/Planta";
 import { useToast } from "@/hooks/use-toast";
-
-// Tipos para el evento de backend
-interface BackendEvent {
-  id: number;
-  eventType: string;
-  fecha: string;
-  plantaIds: number[];
-  description?: string; // Para PhotoEvent
-  mediaUrls?: string[]; // Para PhotoEvent
-}
+import { BackendEvent } from "@/interfaces/Eventos";
 
 const photoSchema = z.object({
   planta_id: z.string().optional(),
@@ -47,22 +39,25 @@ interface PhotoFormProps {
   onBack: () => void;
   onClose: () => void;
   plantaId?: string;
-  eventToEdit?: BackendEvent; // Prop opcional para modo edición
+  selectedPlantIds?: number[];
+  eventToEdit?: BackendEvent;
 }
 
-export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormProps) => {
+export const PhotoForm = ({ onBack, onClose, plantaId, selectedPlantIds, eventToEdit }: PhotoFormProps) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref para resetear input file
+  const cameraPhotoRef = useRef<HTMLInputElement>(null);
+  const cameraVideoRef = useRef<HTMLInputElement>(null);
 
   const { data: plantas = [], isLoading: isLoadingPlantas } = useQuery<PlantaDto[]>({
     queryKey: ['plantas'],
     queryFn: apiService.getPlantas,
-    enabled: !plantaId && !eventToEdit,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    enabled: !plantaId && !selectedPlantIds?.length && !eventToEdit,
+    staleTime: 1000 * 60 * 5,
   });
 
   const createPhotoMutation = useMutation({
@@ -143,10 +138,21 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
     }
   };
 
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      toast({ title: "Foto capturada", description: file.name });
+    }
+    e.target.value = '';
+  };
+
   const onSubmit = (data: PhotoFormData) => {
     const selectedPlantaId = plantaId || data.planta_id;
 
-    if (!selectedPlantaId) {
+    if (!selectedPlantaId && !selectedPlantIds?.length) {
       toast({
         variant: "destructive",
         title: "Selección Requerida",
@@ -155,7 +161,6 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
       return;
     }
 
-    // Para creación, se requiere un archivo
     if (!eventToEdit && !selectedFile) {
       toast({
         variant: "destructive",
@@ -165,23 +170,42 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
       return;
     }
 
-    const formData = new FormData();
-    formData.append("fecha", eventToEdit?.fecha || new Date().toISOString().split('T')[0]);
-    formData.append("plantaIds", selectedPlantaId);
-    formData.append("description", data.description || "");
+    const plantIds = selectedPlantIds?.length ? selectedPlantIds : [parseInt(selectedPlantaId)];
 
-    if (selectedFile) {
-      formData.append("files", selectedFile);
-    } else if (eventToEdit?.mediaUrls) {
-      // Si no hay archivo nuevo y estamos editando, podemos volver a enviar las URLs existentes si el backend lo espera
-      // O el backend debería mantener los archivos existentes si no se envían nuevos.
-      // Por simplicidad, si no hay archivo nuevo, no se envía "files" en el FormData para la actualización.
-    }
+    const buildFormData = (plantId: number) => {
+      const fd = new FormData();
+      fd.append("fecha", eventToEdit?.fecha || new Date().toISOString().split('T')[0]);
+      fd.append("plantaIds", plantId.toString());
+      fd.append("description", data.description || "");
+      if (selectedFile) fd.append("files", selectedFile);
+      return fd;
+    };
 
-    if (eventToEdit) {
-      updatePhotoMutation.mutate({ eventId: eventToEdit.id.toString(), formData });
+    if (plantIds.length === 1) {
+      // Single plant: use mutations
+      const fd = buildFormData(plantIds[0]);
+      if (eventToEdit) {
+        updatePhotoMutation.mutate({ eventId: eventToEdit.id.toString(), formData: fd });
+      } else {
+        createPhotoMutation.mutate(fd);
+      }
     } else {
-      createPhotoMutation.mutate(formData);
+      // Multi-plant: submit with error handling
+      const results = plantIds.map((pid) => apiService.createPhotoEvent(buildFormData(pid)));
+      Promise.allSettled(results).then((settled) => {
+        const succeeded = settled.filter((r) => r.status === "fulfilled").length;
+        const failed = settled.length - succeeded;
+        if (failed > 0) {
+          toast({ variant: "destructive", title: "Error parcial", description: `${succeeded} fotos creadas, ${failed} fallaron.` });
+        } else {
+          toast({ title: "¡Fotos Registradas!", description: `Se registraron ${succeeded} fotos.` });
+        }
+        if (succeeded > 0) {
+          setIsSubmitted(true);
+          queryClient.invalidateQueries({ queryKey: ["plantEvents"] });
+          queryClient.invalidateQueries({ queryKey: ["plantas"] });
+        }
+      });
     }
   };
 
@@ -241,7 +265,7 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {!plantaId && !eventToEdit && (
+          {!plantaId && !eventToEdit && !selectedPlantIds?.length && (
             <FormField
               control={form.control}
               name="planta_id"
@@ -298,7 +322,48 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
           )}
 
           <div className="space-y-2">
-            <FormLabel>Nueva Imagen (Opcional)</FormLabel>
+            <FormLabel>Nueva Imagen</FormLabel>
+
+            {/* Camera Capture Buttons */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => cameraPhotoRef.current?.click()}
+              >
+                <Camera className="w-4 h-4 mr-1" /> Tomar Foto
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => cameraVideoRef.current?.click()}
+              >
+                <Video className="w-4 h-4 mr-1" /> Grabar Video
+              </Button>
+            </div>
+            {/* Hidden inputs for device camera */}
+            <input
+              ref={cameraPhotoRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleCameraCapture}
+            />
+            <input
+              ref={cameraVideoRef}
+              type="file"
+              accept="video/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleCameraCapture}
+            />
+
+            {/* File Upload */}
             <div className="flex flex-col items-center justify-center w-full">
               <label
                 htmlFor="photo-upload"
@@ -338,7 +403,7 @@ export const PhotoForm = ({ onBack, onClose, plantaId, eventToEdit }: PhotoFormP
               )}
             </div>
             <FormDescription>
-              Sube una nueva foto para reemplazar o actualizar la existente.
+              Tomá una foto/grabá un video con la cámara, o subí un archivo.
             </FormDescription>
           </div>
 

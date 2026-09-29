@@ -11,7 +11,9 @@ interface PlantCardProps {
   stage: string;
   health: number;
   fechaCreacion: string;
-  tipoAmbiente?: 'INTERIOR' | 'EXTERIOR';  // From sala
+  tipoAmbiente?: 'INTERIOR' | 'EXTERIOR';
+  favoriteCount?: number;
+  userId?: number;
 }
 
 // Get plant image based on sala tipoAmbiente
@@ -29,7 +31,9 @@ export const PlantCard = ({
   stage,
   health,
   fechaCreacion,
-  tipoAmbiente
+  tipoAmbiente,
+  favoriteCount,
+  userId,
 }: PlantCardProps) => {
   // Calcular edad en días
   const daysOld = Math.floor((new Date().getTime() - new Date(fechaCreacion).getTime()) / (1000 * 3600 * 24));
@@ -50,6 +54,15 @@ export const PlantCard = ({
     }
   };
 
+  // Heart display logic:
+  // - No count data → show nothing
+  // - 0 likes → outline heart only
+  // - 1 like → filled heart, no number (owner's own implicit like)
+  // - 2+ likes → filled heart + count
+  const showHeartCount = favoriteCount !== undefined;
+  const effectiveCount = favoriteCount ?? 0;
+  const showNumber = effectiveCount >= 2;
+
   return (
     <Link to={`/plant/${id}`} className="block h-full">
       <Card className="overflow-hidden border-2 border-primary/50 hover:border-primary/80 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-pointer h-full relative group bg-card">
@@ -64,16 +77,49 @@ export const PlantCard = ({
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
 
-          {/* Favorite button */}
-          <button
-            onClick={handleToggleFav}
-            className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors z-10 ${isFav
-              ? 'text-red-500 bg-red-100/90 dark:bg-red-900/80'
-              : 'text-white/80 bg-black/30 hover:bg-black/50'
+          {/* Subtle heart with like count */}
+          {showHeartCount && (
+            effectiveCount > 0 ? (
+              <button
+                onClick={handleToggleFav}
+                className={`absolute top-2 right-2 p-1 rounded-full transition-colors z-10 ${
+                  isFav
+                    ? 'text-red-400 bg-black/20 hover:bg-black/30'
+                    : 'text-white/60 bg-black/20 hover:bg-black/30'
+                }`}
+                title={showNumber ? `${effectiveCount} like${effectiveCount !== 1 ? 's' : ''}` : 'Like'}
+              >
+                <div className="flex items-center gap-0.5">
+                  <Heart size={14} fill={isFav ? "currentColor" : "none"} />
+                  {showNumber && (
+                    <span className="text-[10px] font-medium leading-none">{effectiveCount}</span>
+                  )}
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={handleToggleFav}
+                className="absolute top-2 right-2 p-1 rounded-full text-white/40 bg-black/20 hover:bg-black/30 transition-colors z-10"
+                title="Like"
+              >
+                <Heart size={14} fill="none" />
+              </button>
+            )
+          )}
+
+          {/* Fallback: show toggle button if no favoriteCount data */}
+          {!showHeartCount && (
+            <button
+              onClick={handleToggleFav}
+              className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors z-10 ${
+                isFav
+                  ? 'text-red-500 bg-red-100/90 dark:bg-red-900/80'
+                  : 'text-white/80 bg-black/30 hover:bg-black/50'
               }`}
-          >
-            <Heart size={16} fill={isFav ? "currentColor" : "none"} />
-          </button>
+            >
+              <Heart size={16} fill={isFav ? "currentColor" : "none"} />
+            </button>
+          )}
         </div>
 
         {/* BOTTOM: Info Section */}

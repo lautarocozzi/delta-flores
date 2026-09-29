@@ -2,17 +2,8 @@ import { useMemo } from 'react'
 import { PlantaDto } from '@/interfaces/Planta'
 import { daysSince } from '../utils/dateCalculations'
 import { avg } from '../utils/statisticalUtils'
+import { BackendEvent } from '@/interfaces/Eventos'
 import { Heart, Activity, CheckCircle } from 'lucide-react'
-
-/**
- * Interface para eventos backend
- */
-interface BackendEvent {
-    id: number
-    eventType: string
-    fecha: string
-    plantaIds: number[]
-}
 
 /**
  * HOOK: Métricas de Calidad y Salud del Cultivo

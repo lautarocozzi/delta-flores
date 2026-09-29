@@ -1,10 +1,10 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layouts/AppSidebar";
-import { PlantCard } from "@/components/dashboard/PlantCard";
+import { FavoritePlantCard } from "@/components/dashboard/FavoritePlantCard";
 import { Heart, Leaf } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
-import { PlantaDto } from "@/interfaces/Planta";
+import { PlantaDto } from "@/schemas/DTOSchemas";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FavoritosPage() {
@@ -14,9 +14,9 @@ export default function FavoritosPage() {
         staleTime: 1000 * 60 * 5,
     });
 
-    // Ordenar alfabéticamente
+    // Ordenar por favoriteCount descendente (más favoritados primero)
     const sortedFavorites = [...favoritePlantas].sort((a, b) =>
-        a.nombre.localeCompare(b.nombre)
+        (b.favoriteCount ?? 0) - (a.favoriteCount ?? 0)
     );
 
     return (
@@ -96,16 +96,7 @@ export default function FavoritosPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {sortedFavorites.map((plant) => (
-                                        <PlantCard
-                                            key={plant.id}
-                                            id={plant.id.toString()}
-                                            etiqueta={plant.nombre}
-                                            genetica={plant.cepaDto?.geneticaParental || 'Desconocida'}
-                                            stage={plant.etapa}
-                                            health={0}
-                                            fechaCreacion={plant.fechaCreacion}
-                                            tipoAmbiente={plant.sala?.tipoAmbiente as 'INTERIOR' | 'EXTERIOR' | undefined}
-                                        />
+                                        <FavoritePlantCard key={plant.id} plant={plant} />
                                     ))}
                                 </div>
                             </>

@@ -40,9 +40,10 @@ const GRADOS = [
 interface DefoliationFormProps {
   onBack: () => void;
   onClose: () => void;
+  selectedPlantIds?: number[];
 }
 
-export const DefoliationForm = ({ onBack, onClose }: DefoliationFormProps) => {
+export const DefoliationForm = ({ onBack, onClose, selectedPlantIds }: DefoliationFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export const DefoliationForm = ({ onBack, onClose }: DefoliationFormProps) => {
   const mutation = useMutation({
     mutationFn: (data: DefoliationFormData) =>
       apiService.createDefoliationEvent({
-        plantaIds: [],
+        plantaIds: selectedPlantIds || [],
         fecha: data.fecha,
         gradoDefoliacion: data.gradoDefoliacion,
       }),
@@ -73,7 +74,13 @@ export const DefoliationForm = ({ onBack, onClose }: DefoliationFormProps) => {
     },
   });
 
-  const onSubmit = (data: DefoliationFormData) => mutation.mutate(data);
+  const onSubmit = (data: DefoliationFormData) => {
+    if (!selectedPlantIds?.length) {
+      toast({ variant: "destructive", title: "Selección Requerida", description: "Debes seleccionar al menos una planta." });
+      return;
+    }
+    mutation.mutate(data);
+  };
 
   return (
     <div className="space-y-4">

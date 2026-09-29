@@ -1,18 +1,12 @@
 import { useMemo } from 'react';
 import { PlantaDto } from '@/interfaces/Planta';
 import { Leaf, Calendar, TrendingUp, Activity, Package, Clock, Droplets } from 'lucide-react';
+import { BackendEvent } from '@/interfaces/Eventos';
 
 interface DashboardFilters {
     searchQuery: string;
     filterEtapa: string;
     filterSala: string;
-}
-
-interface BackendEvent {
-    id: number;
-    eventType: string;
-    fecha: string;
-    plantaIds: number[];
 }
 
 interface DashboardLogicReturn {

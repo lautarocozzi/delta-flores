@@ -26,16 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto } from "@/interfaces/Planta";
 import { useToast } from "@/hooks/use-toast";
-
-// Tipos para el evento de backend
-interface BackendEvent {
-  id: number;
-  eventType: string;
-  fecha: string;
-  plantaIds: number[];
-  text?: string; // Para NoteEvent
-  mediaUrls?: string[]; // Para NoteEvent y PhotoEvent
-}
+import { BackendEvent } from "@/interfaces/Eventos";
 
 const noteSchema = z.object({
   planta_id: z.string().optional(),
@@ -48,10 +39,11 @@ interface NoteFormProps {
   onBack: () => void;
   onClose: () => void;
   plantaId?: string;
-  eventToEdit?: BackendEvent; // Prop opcional para modo edición
+  selectedPlantIds?: number[];
+  eventToEdit?: BackendEvent;
 }
 
-export const NoteForm = ({ onBack, onClose, plantaId, eventToEdit }: NoteFormProps) => {
+export const NoteForm = ({ onBack, onClose, plantaId, selectedPlantIds, eventToEdit }: NoteFormProps) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -108,7 +100,7 @@ export const NoteForm = ({ onBack, onClose, plantaId, eventToEdit }: NoteFormPro
   const { data: plantas = [], isLoading: isLoadingPlantas } = useQuery<PlantaDto[]>({
     queryKey: ['plantas'],
     queryFn: apiService.getPlantas,
-    enabled: !plantaId && !eventToEdit,
+    enabled: !plantaId && !selectedPlantIds?.length && !eventToEdit,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
@@ -183,7 +175,7 @@ export const NoteForm = ({ onBack, onClose, plantaId, eventToEdit }: NoteFormPro
   const onSubmit = (data: NoteFormData) => {
     const selectedPlantaId = plantaId || data.planta_id;
 
-    if (!selectedPlantaId) {
+    if (!selectedPlantaId && !selectedPlantIds?.length) {
       toast({
         variant: "destructive",
         title: "Selección Requerida",
@@ -192,29 +184,42 @@ export const NoteForm = ({ onBack, onClose, plantaId, eventToEdit }: NoteFormPro
       return;
     }
 
-    const formData = new FormData();
-    formData.append("fecha", eventToEdit?.fecha || new Date().toISOString().split('T')[0]);
-    formData.append("plantaIds", selectedPlantaId);
-    formData.append("text", data.contenido);
+    const plantIds = selectedPlantIds?.length ? selectedPlantIds : [parseInt(selectedPlantaId)];
 
-    if (selectedFiles) {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        formData.append("files", selectedFiles[i]);
+    const buildFormData = (plantId: number) => {
+      const formData = new FormData();
+      formData.append("fecha", eventToEdit?.fecha || new Date().toISOString().split('T')[0]);
+      formData.append("plantaIds", plantId.toString());
+      formData.append("text", data.contenido);
+      if (selectedFiles) {
+        for (let i = 0; i < selectedFiles.length; i++) formData.append("files", selectedFiles[i]);
       }
-    }
+      if (audioBlob) {
+        formData.append("files", new File([audioBlob], `nota-voz-${Date.now()}.webm`, { type: 'audio/webm' }));
+      }
+      return formData;
+    };
 
-    if (audioBlob) {
-      // Create a File object from the Blob
-      const audioFile = new File([audioBlob], `nota-voz-${Date.now()}.webm`, { type: 'audio/webm' });
-      formData.append("files", audioFile);
-    }
-
-    if (eventToEdit) {
-      // Para edición, el backend espera @ModelAttribute y @RequestParam(value="newFiles")
-      // Reutilizamos el mismo formData, pero el controlador lo interpretará como newFiles
-      updateNoteMutation.mutate({ eventId: eventToEdit.id.toString(), formData });
+    if (plantIds.length === 1) {
+      const formData = buildFormData(plantIds[0]);
+      if (eventToEdit) updateNoteMutation.mutate({ eventId: eventToEdit.id.toString(), formData });
+      else createNoteMutation.mutate(formData);
     } else {
-      createNoteMutation.mutate(formData);
+      const results = plantIds.map((pid) => apiService.createNoteEvent(buildFormData(pid)));
+      Promise.allSettled(results).then((settled) => {
+        const succeeded = settled.filter((r) => r.status === "fulfilled").length;
+        const failed = settled.length - succeeded;
+        if (failed > 0) {
+          toast({ variant: "destructive", title: "Error parcial", description: `${succeeded} notas creadas, ${failed} fallaron.` });
+        } else {
+          toast({ title: "¡Notas Registradas!", description: `Se registraron ${succeeded} notas.` });
+        }
+        if (succeeded > 0) {
+          setIsSubmitted(true);
+          queryClient.invalidateQueries({ queryKey: ["plantEvents"] });
+          queryClient.invalidateQueries({ queryKey: ["plantas"] });
+        }
+      });
     }
   };
 
@@ -276,7 +281,7 @@ export const NoteForm = ({ onBack, onClose, plantaId, eventToEdit }: NoteFormPro
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-          {!plantaId && !eventToEdit && (
+          {!plantaId && !eventToEdit && !selectedPlantIds?.length && (
             <FormField
               control={form.control}
               name="planta_id"

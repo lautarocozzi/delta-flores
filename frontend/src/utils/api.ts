@@ -83,11 +83,8 @@ api.interceptors.response.use(
 
         try {
             // Call refresh endpoint — the refresh_token cookie is sent automatically
-            const response = await axios.post(
-                `${urlBase}api/auth/refresh`,
-                {},
-                { withCredentials: true }
-            );
+            // MUST use `api` (not raw `axios`) to preserve browser User-Agent
+            const response = await api.post('/api/auth/refresh');
 
             const newToken = response.data.access_token;
             authService.setAccessToken(newToken);

@@ -2,17 +2,8 @@ import { useMemo } from 'react'
 import { PlantaDto } from '@/interfaces/Planta'
 import { daysSince } from '../utils/dateCalculations'
 import { calculateTrend, percentageChange } from '../utils/statisticalUtils'
+import { BackendEvent } from '@/interfaces/Eventos'
 import { Clock, TrendingUp, Calendar } from 'lucide-react'
-
-/**
- * Interface para eventos backend
- */
-interface BackendEvent {
-    id: number
-    eventType: string
-    fecha: string
-    plantaIds: number[]
-}
 
 /**
  * HOOK: Métricas de Análisis Temporal

@@ -18,5 +18,6 @@ export type {
   PlantEventDto,
   ZonaDto,  // ✅ NUEVO (Sprint zonas-y-grid-plantas)
   SalaColaboradorDto,  // ✅ NUEVO (colaboradores)
+  DeviceSessionGroup,  // ✅ Session Management (multi-device, grouped by device)
 } from '@/schemas/DTOSchemas';
 

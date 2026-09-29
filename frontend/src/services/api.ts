@@ -1,23 +1,22 @@
 import api from "@/utils/api";
-import { PlantaDto, SalaDto, CepaDto, UserDto, NutrienteDto, ZonaDto, SalaColaboradorDto } from "@/interfaces/Planta";
+import { PlantaDto, SalaDto, CepaDto, UserDto, NutrienteDto, ZonaDto, SalaColaboradorDto, DeviceSessionGroup } from "@/interfaces/Planta";
 import { BackendEvent, WateringEventPayload, PruningEventPayload, StageChangeEventPayload, DefoliationEventPayload, MeasurementEventPayload } from "@/interfaces/Eventos";
-import { PlantaDtoSchema, SalaDtoSchema, CepaDtoSchema, UserDtoSchema, NutrienteDtoSchema, ZonaDtoSchema, SalaColaboradorDtoSchema } from "@/schemas/DTOSchemas";
-import { z } from 'zod';
-import { validateResponse } from '@/utils/validationHelper';
+import { PlantaDtoSchema, SalaDtoSchema, CepaDtoSchema, UserDtoSchema, NutrienteDtoSchema, ZonaDtoSchema, SalaColaboradorDtoSchema, DeviceSessionGroupSchema, PostDtoSchema, PostDetailDtoSchema, PostReplyDtoSchema, TopPlantaDtoSchema, TareaProgramadaDtoSchema, ColaboradorInfoDtoSchema } from "@/schemas/DTOSchemas";
+import { validateResponse, validateArrayResponse } from '@/utils/validationHelper';
 import { ApiError } from '@/errors';
-
-/** Helper para errores de validación Zod del backend */
-function backendContractError(entity: string, id?: string): never {
-  throw new ApiError(
-    `Invalid server response${id ? ` for ${entity} ${id}` : ` for ${entity}`}`,
-    502, // Bad Gateway — el backend mandó datos inválidos
-    'BACKEND_CONTRACT_VIOLATION',
-  );
-}
 
 export const apiService = {
   // --- AUTH ---
-  loginUser: async (email: string, password: string): Promise<any> => {
+  getMe: async (): Promise<UserDto> => {
+    try {
+      const response = await api.get('/api/auth/me');
+      return validateResponse(UserDtoSchema, response.data, 'GET /api/auth/me');
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  loginUser: async (email: string, password: string): Promise<{ access_token: string }> => {
     try {
       const response = await api.post('/login', { username: email, password });
       return response.data;
@@ -26,11 +25,12 @@ export const apiService = {
     }
   },
 
-  registerUser: async (email: string, password: string): Promise<any> => {
+  registerUser: async (email: string, password: string, username: string): Promise<{ message: string }> => {
     try {
       const response = await api.post('/api/users/register', {
         email,
         password,
+        username,
         nombre: 'Usuario',
         apellido: 'Nuevo'
       });
@@ -44,30 +44,23 @@ export const apiService = {
   getPlantas: async (): Promise<PlantaDto[]> => {
     const response = await api.get('/api/plantas');
 
-    const parsed = z.array(PlantaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato PlantaDto:", parsed.error.issues);
-      backendContractError('plantas');
-    }
-
-    return parsed.data;
+    return validateArrayResponse(PlantaDtoSchema, response.data, 'GET /api/plantas');
   },
 
   getPlantaById: async (id: string): Promise<PlantaDto> => {
     const response = await api.get(`/api/plantas/${id}`);
 
-    const parsed = PlantaDtoSchema.safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato PlantaDto (byId):", parsed.error.issues);
-      backendContractError('planta', id);
-    }
-
-    return parsed.data;
+    return validateResponse(PlantaDtoSchema, response.data, `GET /api/plantas/${id}`);
   },
 
   getPlantEvents: async (id: string): Promise<BackendEvent[]> => {
     const response = await api.get(`/api/plantas/${id}/events`);
-    return response.data;
+    return validateArrayResponse(PlantEventSchema, response.data, `GET /api/plantas/${id}/events`);
+  },
+
+  getPublicPlantEvents: async (id: string): Promise<BackendEvent[]> => {
+    const response = await api.get(`/api/plantas/${id}/events/public`);
+    return validateArrayResponse(PlantEventSchema, response.data, `GET /api/plantas/${id}/events/public`);
   },
 
   createPlanta: async (plantaData: Partial<PlantaDto>): Promise<PlantaDto> => {
@@ -88,25 +81,19 @@ export const apiService = {
   getSalas: async (): Promise<SalaDto[]> => {
     const response = await api.get('/api/salas');
 
-    const parsed = z.array(SalaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato SalaDto:", parsed.error.issues);
-      backendContractError('salas');
-    }
+    return validateArrayResponse(SalaDtoSchema, response.data, 'GET /api/salas');
+  },
 
-    return parsed.data;
+  getSalaById: async (id: number): Promise<SalaDto> => {
+    const response = await api.get(`/api/salas/${id}`);
+
+    return validateResponse(SalaDtoSchema, response.data, `GET /api/salas/${id}`);
   },
 
   getSalasDisponibles: async (): Promise<SalaDto[]> => {
     const response = await api.get('/api/salas/disponibles');
 
-    const parsed = z.array(SalaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato SalaDto (disponibles):", parsed.error.issues);
-      backendContractError('salas', 'disponibles');
-    }
-
-    return parsed.data;
+    return validateArrayResponse(SalaDtoSchema, response.data, 'GET /api/salas/disponibles');
   },
 
   createSala: async (salaData: Partial<SalaDto>): Promise<SalaDto> => {
@@ -119,23 +106,55 @@ export const apiService = {
     return validateResponse(SalaDtoSchema, response.data, `PUT /api/salas/${id}`);
   },
 
-  deleteSala: async (id: number): Promise<void> => {
-    await api.delete(`/api/salas/${id}`);
+  deleteSala: async (id: number, deletePlants: boolean = false): Promise<void> => {
+    try {
+      await api.delete(`/api/salas/${id}`, { params: { deletePlants } });
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  toggleSalaPublic: async (id: number, propagateVisibility: boolean = false): Promise<SalaDto> => {
+    const response = await api.put(`/api/salas/${id}/toggle-public`, { propagateVisibility });
+    return validateResponse(SalaDtoSchema, response.data, `PUT /api/salas/${id}/toggle-public`);
+  },
+
+  toggleSalaPin: async (id: number): Promise<SalaDto> => {
+    const response = await api.put(`/api/salas/${id}/pin`);
+    return validateResponse(SalaDtoSchema, response.data, `PUT /api/salas/${id}/pin`);
+  },
+
+  // --- PUBLIC PROFILE ---
+  getPublicProfileByUsername: async (username: string): Promise<UserDto> => {
+    const response = await api.get(`/api/users/username/${encodeURIComponent(username)}`);
+    return validateResponse(UserDtoSchema, response.data, `GET /api/users/username/${username}`);
+  },
+
+  getSalaByUsernameAndId: async (username: string, salaId: number): Promise<SalaDto> => {
+    const response = await api.get(`/api/users/${encodeURIComponent(username)}/salas/${salaId}`);
+    return validateResponse(SalaDtoSchema, response.data, `GET /api/users/${username}/salas/${salaId}`);
+  },
+
+  getPublicPlantasByUsername: async (username: string): Promise<PlantaDto[]> => {
+    const response = await api.get(`/api/users/${encodeURIComponent(username)}/plantas/public`);
+    return validateArrayResponse(PlantaDtoSchema, response.data, `GET /api/users/${username}/plantas/public`);
+  },
+
+  getPublicSalasByUsername: async (username: string, includeCollaborations: boolean = false): Promise<SalaDto[]> => {
+    const response = await api.get(`/api/users/${encodeURIComponent(username)}/salas/public`, {
+      params: { includeCollaborations },
+    });
+    return validateArrayResponse(SalaDtoSchema, response.data, `GET /api/users/${username}/salas/public`);
   },
 
   // --- COLABORADORES ---
   getColaboradores: async (salaId: number): Promise<SalaColaboradorDto[]> => {
     const response = await api.get(`/api/salas/${salaId}/colaboradores`);
-    const parsed = z.array(SalaColaboradorDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato SalaColaboradorDto:", parsed.error.issues);
-      backendContractError('colaboradores', `sala/${salaId}`);
-    }
-    return parsed.data;
+    return validateArrayResponse(SalaColaboradorDtoSchema, response.data, `GET /api/salas/${salaId}/colaboradores`);
   },
 
-  agregarColaborador: async (salaId: number, userId: number, tipoColaborador: string = "EDITOR"): Promise<SalaColaboradorDto> => {
-    const response = await api.post(`/api/salas/${salaId}/colaboradores`, { userId, tipoColaborador });
+  agregarColaborador: async (salaId: number, email: string, tipoColaborador: string = "EDITOR"): Promise<SalaColaboradorDto> => {
+    const response = await api.post(`/api/salas/${salaId}/colaboradores`, { email, tipoColaborador });
     return validateResponse(SalaColaboradorDtoSchema, response.data, `POST /api/salas/${salaId}/colaboradores`);
   },
 
@@ -153,25 +172,13 @@ export const apiService = {
   getCepas: async (): Promise<CepaDto[]> => {
     const response = await api.get('/api/cepas');
 
-    const parsed = z.array(CepaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato CepaDto:", parsed.error.issues);
-      backendContractError('cepas');
-    }
-
-    return parsed.data;
+    return validateArrayResponse(CepaDtoSchema, response.data, 'GET /api/cepas');
   },
 
   getCepasBySala: async (salaId: number): Promise<CepaDto[]> => {
     const response = await api.get(`/api/cepas/sala/${salaId}`);
 
-    const parsed = z.array(CepaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato CepaDto (bySala):", parsed.error.issues);
-      backendContractError('cepas', `sala/${salaId}`);
-    }
-
-    return parsed.data;
+    return validateArrayResponse(CepaDtoSchema, response.data, `GET /api/cepas/sala/${salaId}`);
   },
 
   createCepa: async (cepaData: Partial<CepaDto>): Promise<CepaDto> => {
@@ -192,13 +199,7 @@ export const apiService = {
   getNutrientes: async (): Promise<NutrienteDto[]> => {
     const response = await api.get('/api/nutrientes');
 
-    const parsed = z.array(NutrienteDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato NutrienteDto:", parsed.error.issues);
-      backendContractError('nutrientes');
-    }
-
-    return parsed.data;
+    return validateArrayResponse(NutrienteDtoSchema, response.data, 'GET /api/nutrientes');
   },
 
   createNutriente: async (nutrienteData: { titulo: string, descripcion: string }): Promise<any> => {
@@ -219,58 +220,31 @@ export const apiService = {
   getUsers: async (): Promise<UserDto[]> => {
     const response = await api.get('/api/users');
 
-    const parsed = z.array(UserDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato UserDto:", parsed.error.issues);
-      backendContractError('users');
-    }
-
-    return parsed.data;
+    return validateArrayResponse(UserDtoSchema, response.data, 'GET /api/users');
   },
 
   // --- ADMIN: Get plants by userId (SUPER_ADMIN only) ---
   getPlantasByUserId: async (userId: number): Promise<PlantaDto[]> => {
     const response = await api.get(`/api/plantas/user/${userId}`);
 
-    const parsed = z.array(PlantaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato PlantaDto (byUserId):", parsed.error.issues);
-      backendContractError('plantas', `user/${userId}`);
-    }
-
-    return parsed.data;
+    return validateArrayResponse(PlantaDtoSchema, response.data, `GET /api/plantas/user/${userId}`);
   },
 
   // --- PLANTAS BY SALA (bulk occupied cells) ---
   getPlantasBySala: async (salaId: number): Promise<PlantaDto[]> => {
     const response = await api.get(`/api/plantas/sala/${salaId}`);
-    const parsed = z.array(PlantaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato PlantaDto (bySala):", parsed.error.issues);
-      backendContractError('plantas', `sala/${salaId}`);
-    }
-    return parsed.data;
+    return validateArrayResponse(PlantaDtoSchema, response.data, `GET /api/plantas/sala/${salaId}`);
   },
 
   // --- ZONAS ---
   getZonasBySala: async (salaId: number): Promise<ZonaDto[]> => {
     const response = await api.get(`/api/zonas/sala/${salaId}`);
-    const parsed = z.array(ZonaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato ZonaDto:", parsed.error.issues);
-      backendContractError('zonas', `sala/${salaId}`);
-    }
-    return parsed.data;
+    return validateArrayResponse(ZonaDtoSchema, response.data, `GET /api/zonas/sala/${salaId}`);
   },
 
   getPlantasByZona: async (zonaId: number): Promise<PlantaDto[]> => {
     const response = await api.get(`/api/zonas/${zonaId}/plantas`);
-    const parsed = z.array(PlantaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato PlantaDto (byZona):", parsed.error.issues);
-      backendContractError('plantas', `zona/${zonaId}`);
-    }
-    return parsed.data;
+    return validateArrayResponse(PlantaDtoSchema, response.data, `GET /api/zonas/${zonaId}/plantas`);
   },
 
   createZona: async (zonaData: Partial<ZonaDto>): Promise<ZonaDto> => {
@@ -289,12 +263,7 @@ export const apiService = {
 
   createZonasBatch: async (salaId: number, zonas: { posicionX: number; posicionY: number; columnas: number; filas: number }[]): Promise<ZonaDto[]> => {
     const response = await api.post(`/api/salas/${salaId}/zonas/batch`, { zonas });
-    const parsed = z.array(ZonaDtoSchema).safeParse(response.data);
-    if (!parsed.success) {
-      console.error("❌ Backend violó contrato ZonaDto (batch):", parsed.error.issues);
-      backendContractError('zonas', 'batch');
-    }
-    return parsed.data;
+    return validateArrayResponse(ZonaDtoSchema, response.data, `POST /api/salas/${salaId}/zonas/batch`);
   },
 
   updateUbicacion: async (plantaId: number, ubicacion: { zonaId: number; columna: number; fila: number }): Promise<PlantaDto> => {
@@ -386,6 +355,236 @@ export const apiService = {
 
   getFavoritePlantas: async (): Promise<PlantaDto[]> => {
     const response = await api.get('/api/favorites/plantas');
-    return response.data;
+    return validateArrayResponse(PlantaDtoSchema, response.data, 'GET /api/favorites/plantas');
+  },
+
+  // --- USER PROFILE ---
+  updateUserProfile: async (id: number, data: { username?: string; nombre?: string; apellido?: string }): Promise<UserDto> => {
+    try {
+      const response = await api.put(`/api/users/${id}/profile`, data);
+      return validateResponse(UserDtoSchema, response.data, `PUT /api/users/${id}/profile`);
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  updatePassword: async (id: number, currentPassword: string, newPassword: string): Promise<void> => {
+    try {
+      await api.put(`/api/users/${id}/password`, { currentPassword, newPassword });
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  uploadProfileImage: async (id: number, file: File): Promise<UserDto> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post(`/api/users/${id}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return validateResponse(UserDtoSchema, response.data, `POST /api/users/${id}/image`);
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  checkUsername: async (username: string): Promise<boolean> => {
+    try {
+      const response = await api.get(`/api/users/check-username/${encodeURIComponent(username)}`);
+      return response.data.available;
+    } catch (error: unknown) {
+      throw ApiError.fromAxiosError(error);
+    }
+  },
+
+  // --- PUBLIC PLANTAS ---
+  getPublicPlantas: async (): Promise<PlantaDto[]> => {
+    const response = await api.get('/api/plantas/public');
+    return validateArrayResponse(PlantaDtoSchema, response.data, 'GET /api/plantas/public');
+  },
+
+  togglePublicStatus: async (plantaId: number): Promise<PlantaDto> => {
+    const response = await api.put(`/api/plantas/${plantaId}/toggle-public`);
+    return validateResponse(PlantaDtoSchema, response.data, `PUT /api/plantas/${plantaId}/toggle-public`);
+  },
+
+  // --- SESSIONS (Multi-Device Management) ---
+  getSessions: async (): Promise<DeviceSessionGroup[]> => {
+    const response = await api.get('/api/auth/sessions');
+    return validateArrayResponse(DeviceSessionGroupSchema, response.data, 'GET /api/auth/sessions');
+  },
+
+  revokeSession: async (sessionId: string): Promise<void> => {
+    await api.delete(`/api/auth/sessions/${sessionId}`);
+  },
+
+  revokeDeviceSessions: async (deviceKey: string): Promise<void> => {
+    await api.delete(`/api/auth/sessions/device/${deviceKey}`);
+  },
+
+  revokeAllSessions: async (): Promise<void> => {
+    await api.delete('/api/auth/sessions');
+  },
+
+  // ─── Comunidad / Posts ───────────────────────────────────
+
+  getPosts: async (params: {
+    categoria?: string;
+    tipo?: string;
+    sort?: string;
+    search?: string;
+    page?: number;
+    size?: number;
+  } = {}): Promise<{ content: PostDto[]; totalElements: number; totalPages: number; last: boolean }> => {
+    const response = await api.get('/api/comunidad/posts', { params });
+    const data = response.data;
+    return {
+      content: data.content.map((item: any) => validateResponse(PostDtoSchema, item, 'GET /api/comunidad/posts')),
+      totalElements: data.totalElements,
+      totalPages: data.totalPages,
+      last: data.last,
+    };
+  },
+
+  getHeroPosts: async (): Promise<PostDto[]> => {
+    const response = await api.get('/api/comunidad/posts/hero');
+    return response.data.map((item: any) => validateResponse(PostDtoSchema, item, 'GET /api/comunidad/posts/hero'));
+  },
+
+  getPost: async (id: number): Promise<PostDetailDto> => {
+    const response = await api.get(`/api/comunidad/posts/${id}`);
+    return validateResponse(PostDetailDtoSchema, response.data, `GET /api/comunidad/posts/${id}`);
+  },
+
+  createPost: async (data: { titulo: string; contenido: string; tipoPost: string; categoria: string }): Promise<PostDto> => {
+    const response = await api.post('/api/comunidad/posts', data);
+    return validateResponse(PostDtoSchema, response.data, 'POST /api/comunidad/posts');
+  },
+
+  updatePost: async (id: number, data: { titulo: string; contenido: string; tipoPost: string; categoria: string }): Promise<PostDto> => {
+    const response = await api.put(`/api/comunidad/posts/${id}`, data);
+    return validateResponse(PostDtoSchema, response.data, `PUT /api/comunidad/posts/${id}`);
+  },
+
+  deletePost: async (id: number): Promise<void> => {
+    await api.delete(`/api/comunidad/posts/${id}`);
+  },
+
+  votePost: async (id: number, tipo: 'UP' | 'DOWN'): Promise<PostDto> => {
+    const response = await api.post(`/api/comunidad/posts/${id}/vote`, { tipo });
+    return validateResponse(PostDtoSchema, response.data, `POST /api/comunidad/posts/${id}/vote`);
+  },
+
+  markResuelto: async (id: number): Promise<PostDto> => {
+    const response = await api.post(`/api/comunidad/posts/${id}/resolve`);
+    return validateResponse(PostDtoSchema, response.data, `POST /api/comunidad/posts/${id}/resolve`);
+  },
+
+  toggleHeroPost: async (id: number): Promise<PostDto> => {
+    const response = await api.put(`/api/comunidad/posts/${id}/hero`);
+    return validateResponse(PostDtoSchema, response.data, `PUT /api/comunidad/posts/${id}/hero`);
+  },
+
+  getReplies: async (postId: number): Promise<PostReplyDto[]> => {
+    const response = await api.get(`/api/comunidad/posts/${postId}/replies`);
+    return response.data.map((item: any) => validateResponse(PostReplyDtoSchema, item, `GET /api/comunidad/posts/${postId}/replies`));
+  },
+
+  createReply: async (postId: number, contenido: string): Promise<PostReplyDto> => {
+    const response = await api.post(`/api/comunidad/posts/${postId}/replies`, { contenido });
+    return validateResponse(PostReplyDtoSchema, response.data, `POST /api/comunidad/posts/${postId}/replies`);
+  },
+
+  deleteReply: async (replyId: number): Promise<void> => {
+    await api.delete(`/api/comunidad/posts/replies/${replyId}`);
+  },
+
+  voteReply: async (replyId: number, tipo: 'UP' | 'DOWN'): Promise<PostReplyDto> => {
+    const response = await api.post(`/api/comunidad/posts/replies/${replyId}/vote`, { tipo });
+    return validateResponse(PostReplyDtoSchema, response.data, `POST /api/comunidad/posts/replies/${replyId}/vote`);
+  },
+
+  markSolucion: async (replyId: number): Promise<PostReplyDto> => {
+    const response = await api.post(`/api/comunidad/posts/replies/${replyId}/solve`);
+    return validateResponse(PostReplyDtoSchema, response.data, `POST /api/comunidad/posts/replies/${replyId}/solve`);
+  },
+
+  getTopPlantas: async (limit: number = 10): Promise<TopPlantaDto[]> => {
+    const response = await api.get('/api/comunidad/top-plantas', { params: { limit } });
+    return response.data.map((item: any) => validateResponse(TopPlantaDtoSchema, item, 'GET /api/comunidad/top-plantas'));
+  },
+
+  getUserPosts: async (userId: number, page: number = 0, size: number = 20): Promise<{ content: PostDto[]; totalElements: number; totalPages: number; last: boolean }> => {
+    const response = await api.get(`/api/comunidad/posts/user/${userId}`, { params: { page, size } });
+    const data = response.data;
+    return {
+      content: data.content.map((item: any) => validateResponse(PostDtoSchema, item, 'GET /api/comunidad/posts/user/' + userId)),
+      totalElements: data.totalElements,
+      totalPages: data.totalPages,
+      last: data.last,
+    };
+  },
+
+  deletePostAdmin: async (id: number): Promise<void> => {
+    await api.delete(`/api/comunidad/admin/posts/${id}`);
+  },
+
+  deleteReplyAdmin: async (replyId: number): Promise<void> => {
+    await api.delete(`/api/comunidad/admin/replies/${replyId}`);
+  },
+
+  // --- COLABORADORES ---
+  getMisColaboradores: async () => {
+    const response = await api.get('/api/salas/mis-colaboradores');
+    return validateArrayResponse(ColaboradorInfoDtoSchema, response.data, 'GET /api/salas/mis-colaboradores');
+  },
+
+  // --- TAREAS PROGRAMADAS ---
+  getTareas: async () => {
+    const response = await api.get('/api/tareas');
+    return validateArrayResponse(TareaProgramadaDtoSchema, response.data, 'GET /api/tareas');
+  },
+
+  getTareasPendientes: async () => {
+    const response = await api.get('/api/tareas/pendientes');
+    return validateArrayResponse(TareaProgramadaDtoSchema, response.data, 'GET /api/tareas/pendientes');
+  },
+
+  createTarea: async (data: {
+    titulo: string;
+    descripcion?: string;
+    recurrencia: string;
+    fechaProgramada: string;
+    usuarioDestinoId?: number;
+    salaAsociadaId?: number | null;
+    plantaAsociadaId?: number | null;
+    colaboradorAsignadoId?: number | null;
+  }) => {
+    const response = await api.post('/api/tareas', data);
+    return validateResponse(TareaProgramadaDtoSchema, response.data, 'POST /api/tareas');
+  },
+
+  updateTarea: async (id: number, data: {
+    titulo: string;
+    descripcion?: string;
+    recurrencia: string;
+    fechaProgramada: string;
+    usuarioDestinoId?: number;
+    salaAsociadaId?: number | null;
+    plantaAsociadaId?: number | null;
+    colaboradorAsignadoId?: number | null;
+  }) => {
+    const response = await api.put(`/api/tareas/${id}`, data);
+    return validateResponse(TareaProgramadaDtoSchema, response.data, `PUT /api/tareas/${id}`);
+  },
+
+  toggleTarea: async (id: number) => {
+    const response = await api.put(`/api/tareas/${id}/toggle`);
+    return validateResponse(TareaProgramadaDtoSchema, response.data, `PUT /api/tareas/${id}/toggle`);
+  },
+
+  deleteTarea: async (id: number): Promise<void> => {
+    await api.delete(`/api/tareas/${id}`);
   },
 };

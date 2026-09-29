@@ -50,6 +50,45 @@ All colors MUST be HSL.
   }
 }
 
+/* ── Sala Themes ─────────────────────────────── */
+/* Radiant: dark gray base, green as subtle accent only */
+.theme-radiant {
+  --background: 220 14% 10%;            /* dark gray */
+  --foreground: 220 14% 88%;            /* light gray text */
+  --card: 220 14% 13%;                  /* slightly lighter gray */
+  --card-foreground: 220 14% 88%;       /* light gray text on cards */
+  --primary: 152 50% 50%;               /* muted green — buttons only */
+  --primary-foreground: 220 14% 10%;    /* dark text on green btn */
+  --muted: 220 14% 13%;
+  --muted-foreground: 220 9% 50%;       /* gray secondary text */
+  --accent: 220 14% 20%;                /* subtle gray hover */
+  --border: 220 10% 18%;                /* gray borders */
+  --ring: 152 50% 50%;                  /* green focus ring */
+  --sidebar-background: 220 14% 11%;
+  --sidebar-primary: 152 50% 50%;
+  --sidebar-accent: 220 10% 18%;
+  --sidebar-border: 220 10% 18%;
+}
+
+/* Dracula: purple/pink/cyan accent */
+.theme-dracula {
+  --background: 234 33% 12%;
+  --foreground: 60 30% 90%;
+  --card: 234 33% 16%;
+  --card-foreground: 60 30% 90%;
+  --primary: 268 82% 73%;
+  --primary-foreground: 234 33% 12%;
+  --muted: 234 33% 16%;
+  --muted-foreground: 225 14% 56%;
+  --accent: 330 77% 72%;
+  --border: 268 82% 30%;
+  --ring: 268 82% 73%;
+  --sidebar-background: 234 33% 16%;
+  --sidebar-primary: 268 82% 73%;
+  --sidebar-accent: 268 82% 30%;
+  --sidebar-border: 268 82% 30%;
+}
+
 @layer base {
   * {
     @apply border-border;

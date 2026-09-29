@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layouts/AppSidebar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PlantCard } from "@/components/dashboard/PlantCard";
-import { DirectAccessMenu } from "@/components/shared/DirectAccessMenu";
+import { RegistroEventoForm } from "@/components/shared/RegistroEventoForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto, SalaDto, CepaDto } from "@/interfaces/Planta";
-import { useDirectAccessMenuStore } from "@/stores/useDirectAccessMenuStore";
+import { useRegistroEventoFormStore } from "@/stores/useRegistroEventoFormStore";
 import { SalaCard } from "@/components/dashboard/SalaCard";
 import { WeeklyActivityChart } from "@/components/dashboard/WeeklyActivityChart";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [filterSala, setFilterSala] = useState('Todas');
   const navigate = useNavigate();
 
-  const { openMenuAndSelectTool, openMenu } = useDirectAccessMenuStore();
+  const { openMenuAndSelectTool, openMenu } = useRegistroEventoFormStore();
 
   const { data: plantas = [], isLoading, isError, error } = useQuery<PlantaDto[]>({
     queryKey: ['plantas'],
@@ -64,11 +64,11 @@ export default function Dashboard() {
     openMenuAndSelectTool(toolName);  // Abre menú CON tool preseleccionada
   };
 
-  const handleGoToPanel = (tab: string) => {
-    navigate(`/configuracion?tab=${tab}`);
+  const handleGoToPanel = () => {
+    navigate('/bitacora');
   };
 
-  // Open DirectAccessMenu only on first visit (with delay for smooth UX)
+  // Open RegistroEventoForm only on first visit (with delay for smooth UX)
   useEffect(() => {
     const hasVisitedDashboard = localStorage.getItem('floresdelta_dashboard_visited');
     if (!hasVisitedDashboard) {
@@ -88,15 +88,9 @@ export default function Dashboard() {
 
   return (
     <SidebarProvider>
-      {/* DirectAccessMenu is now global in App.tsx */}
+      {/* RegistroEventoForm is now global in App.tsx */}
       <div
         className="min-h-screen w-full flex bg-background"
-        style={{
-          backgroundImage: 'url(/images/background.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-        }}
       >
         {/* Background overlay for content readability */}
         <div className="absolute inset-0 bg-background/60 pointer-events-none" style={{ position: 'fixed' }} />
@@ -164,7 +158,7 @@ export default function Dashboard() {
                             <SalaCard
                               sala={sala}
                               plantCount={count}
-                              onClick={() => navigate(`/plantas?sala=${sala.id}&view=visual`)}
+                              onClick={() => navigate('/profile')}
                             />
                           </CarouselItem>
                         );
@@ -198,7 +192,7 @@ export default function Dashboard() {
                 {!hasSalas && (
                   <Button
                     variant="secondary"
-                    onClick={() => handleGoToPanel('salas')}
+                    onClick={() => handleGoToPanel()}
                     className="w-full max-w-xs"
                   >
                     <Plus size={16} className="mr-2" />
@@ -208,7 +202,7 @@ export default function Dashboard() {
                 {!hasCepas && (
                   <Button
                     variant="secondary"
-                    onClick={() => handleGoToPanel('geneticas')}
+                    onClick={() => handleGoToPanel()}
                     className="w-full max-w-xs"
                   >
                     <Plus size={16} className="mr-2" />

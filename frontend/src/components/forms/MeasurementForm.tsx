@@ -31,9 +31,10 @@ type MeasurementFormData = z.infer<typeof measurementSchema>;
 interface MeasurementFormProps {
   onBack: () => void;
   onClose: () => void;
+  selectedPlantIds?: number[];
 }
 
-export const MeasurementForm = ({ onBack, onClose }: MeasurementFormProps) => {
+export const MeasurementForm = ({ onBack, onClose, selectedPlantIds }: MeasurementFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -53,7 +54,7 @@ export const MeasurementForm = ({ onBack, onClose }: MeasurementFormProps) => {
   const mutation = useMutation({
     mutationFn: (data: MeasurementFormData) =>
       apiService.createMeasurementEvent({
-        plantaIds: [],
+        plantaIds: selectedPlantIds || [],
         fecha: data.fecha,
         temperaturaAmbiente: data.temperaturaAmbiente,
         humedad: data.humedad,
@@ -72,7 +73,13 @@ export const MeasurementForm = ({ onBack, onClose }: MeasurementFormProps) => {
     },
   });
 
-  const onSubmit = (data: MeasurementFormData) => mutation.mutate(data);
+  const onSubmit = (data: MeasurementFormData) => {
+    if (!selectedPlantIds?.length) {
+      toast({ variant: "destructive", title: "Selección Requerida", description: "Debes seleccionar al menos una planta." });
+      return;
+    }
+    mutation.mutate(data);
+  };
 
   return (
     <div className="space-y-4">

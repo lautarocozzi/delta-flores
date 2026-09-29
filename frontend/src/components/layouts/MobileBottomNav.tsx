@@ -1,7 +1,7 @@
-import { Home, Leaf, PlusCircle, BookOpen, User } from 'lucide-react';
+import { Home, Users, PlusCircle, BookOpen, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useDirectAccessMenuStore } from '@/stores/useDirectAccessMenuStore';
+import { useRegistroEventoFormStore } from '@/stores/useRegistroEventoFormStore';
 
 /**
  * MobileBottomNav - Navegación inferior para dispositivos móviles
@@ -21,16 +21,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { icon: Home, label: 'Inicio', path: '/dashboard' },
-    { icon: Leaf, label: 'Plantas', path: '/plantas' },
+    { icon: Users, label: 'Comunidad', path: '/comunidad' },
     { icon: PlusCircle, label: '', path: null, action: 'openMenu' }, // FAB central
-    { icon: BookOpen, label: 'Bitácora', path: '/bitacora-maestra' },
+    { icon: BookOpen, label: 'Bitácora', path: '/bitacora' },
     { icon: User, label: 'Perfil', path: '/profile' },
 ];
 
 export function MobileBottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { openMenu } = useDirectAccessMenuStore();
+    const { openMenu } = useRegistroEventoFormStore();
 
     const handleNavClick = (item: NavItem) => {
         if (item.action === 'openMenu') {

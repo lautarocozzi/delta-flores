@@ -16,7 +16,7 @@ interface UserDto {
     email: string;
     nombre: string;
     apellido: string;
-    role: string;
+    rol: string;
 }
 
 export const UsuariosManager = () => {
@@ -69,8 +69,8 @@ export const UsuariosManager = () => {
                                     </TableCell>
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
-                                        <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                                            {user.role}
+                                        <Badge variant={user.rol === 'ADMIN' ? 'default' : 'secondary'}>
+                                            {user.rol}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">{user.id}</TableCell>

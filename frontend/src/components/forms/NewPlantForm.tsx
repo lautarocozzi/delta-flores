@@ -49,7 +49,7 @@ type NewPlantFormData = z.infer<typeof newPlantSchema>;
 interface NewPlantFormProps {
   onBack: () => void;
   onClose: () => void;
-  contextSalaId?: string; // Optional context from parent (e.g., DirectAccessMenu or SalaDetailPage)
+  contextSalaId?: string; // Optional context from parent (e.g., RegistroEventoForm or SalaDetailPage)
 }
 
 const ETAPAS_OPTIONS = [

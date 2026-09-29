@@ -42,9 +42,10 @@ const ETAPAS = [
 interface StageChangeFormProps {
   onBack: () => void;
   onClose: () => void;
+  selectedPlantIds?: number[];
 }
 
-export const StageChangeForm = ({ onBack, onClose }: StageChangeFormProps) => {
+export const StageChangeForm = ({ onBack, onClose, selectedPlantIds }: StageChangeFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export const StageChangeForm = ({ onBack, onClose }: StageChangeFormProps) => {
   const mutation = useMutation({
     mutationFn: (data: StageFormData) =>
       apiService.createStageChangeEvent({
-        plantaIds: [],
+        plantaIds: selectedPlantIds || [],
         fecha: data.fecha,
         nuevaEtapa: data.nuevaEtapa,
       }),
@@ -76,7 +77,13 @@ export const StageChangeForm = ({ onBack, onClose }: StageChangeFormProps) => {
     },
   });
 
-  const onSubmit = (data: StageFormData) => mutation.mutate(data);
+  const onSubmit = (data: StageFormData) => {
+    if (!selectedPlantIds?.length) {
+      toast({ variant: "destructive", title: "Selección Requerida", description: "Debes seleccionar al menos una planta." });
+      return;
+    }
+    mutation.mutate(data);
+  };
 
   return (
     <div className="space-y-4">

@@ -1,4 +1,4 @@
-import { Home, Leaf, Settings, LogOut, User, Heart, BookOpen } from "lucide-react";
+import { Home, Leaf, LogOut, User, Heart, BookOpen, Shield, Building2, Users, ShieldAlert } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -12,20 +12,24 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useSalaTheme, THEME_OPTIONS } from "@/contexts/SalaThemeContext";
+import { cn } from "@/lib/utils";
 
 // Menu items reordered: Inicio, Plantas, Favoritos, Bitácoras, Panel de Control
 const menuItems = [
   { id: 'inicio', label: 'Inicio', icon: Home, path: '/dashboard' },
-  { id: 'plantas', label: 'Plantas', icon: Leaf, path: '/plantas' },
+  { id: 'comunidad', label: 'Comunidad', icon: Users, path: '/comunidad' },
   { id: 'favoritos', label: 'Favoritos', icon: Heart, path: '/favoritos' },
-  { id: 'bitacoras', label: 'Bitácoras', icon: BookOpen, path: '/bitacora-maestra' },
-  { id: 'panel', label: 'Panel de Control', icon: Settings, path: '/configuracion' },
+  { id: 'bitacoras', label: 'Bitácora', icon: BookOpen, path: '/bitacora' },
 ];
 
 export function AppSidebar() {
-  const { logout } = useAuthContext();
+  const { logout, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, setTheme } = useSalaTheme();
+
+  const isAdmin = user?.role === "ROLE_ADMIN" || user?.role === "ROLE_SUPER_ADMIN";
 
   const handleLogout = async () => {
     await logout();
@@ -72,6 +76,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Theme selector */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Tema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="flex gap-1 px-2">
+              {THEME_OPTIONS.map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id)}
+                  title={label}
+                  className={cn(
+                    "flex-1 flex items-center justify-center py-1.5 rounded-md transition-all",
+                    theme === id
+                      ? "bg-primary/20 text-primary border border-primary/30"
+                      : "text-muted-foreground hover:bg-muted/50 border border-transparent"
+                  )}
+                >
+                  <Icon size={16} />
+                </button>
+              ))}
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4">
@@ -81,6 +109,24 @@ export function AppSidebar() {
               <div className="flex items-center gap-2">
                 <div className="bg-primary/20 p-1 rounded-full"><User size={16} className="text-primary" /></div>
                 <span>Mi Perfil</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => navigate('/admin/comunidad')} className="hover:bg-accent/50">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/20 p-1 rounded-full"><ShieldAlert size={16} className="text-primary" /></div>
+                  <span>Admin Comunidad</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => navigate('/profile/security')} className="hover:bg-accent/50">
+              <div className="flex items-center gap-2">
+                <div className="bg-primary/20 p-1 rounded-full"><Shield size={16} className="text-primary" /></div>
+                <span>Seguridad</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

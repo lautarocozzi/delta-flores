@@ -25,15 +25,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto } from "@/interfaces/Planta";
 import { useToast } from "@/hooks/use-toast";
-
-// Tipos para el evento de backend
-interface BackendEvent {
-  id: number;
-  eventType: string;
-  fecha: string;
-  plantaIds: number[];
-  tipoPoda?: string; // Para PruningEvent
-}
+import { BackendEvent } from "@/interfaces/Eventos";
 
 const pruningSchema = z.object({
   planta_id: z.string().optional(),
@@ -48,16 +40,17 @@ interface PruningFormProps {
   onBack: () => void;
   onClose: () => void;
   plantaId?: string;
-  eventToEdit?: BackendEvent; // Prop opcional para modo edición
+  selectedPlantIds?: number[];
+  eventToEdit?: BackendEvent;
 }
 
 const TIPOS_PODA = [
-  { value: "APICAL", label: "Poda Apical", description: "Corte del tallo principal" },
-  { value: "FIM", label: "FIM (Fuck I Missed)", description: "Técnica de topping parcial" },
-  { value: "LST", label: "LST (Low Stress Training)", description: "Entrenamiento de bajo estrés" },
+  { value: "APICAL", label: "Apical" },
+  { value: "FIM", label: "FIM" },
+  { value: "LST", label: "LST" },
 ];
 
-export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningFormProps) => {
+export const PruningForm = ({ onBack, onClose, plantaId, selectedPlantIds, eventToEdit }: PruningFormProps) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -65,7 +58,7 @@ export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningF
   const { data: plantas = [], isLoading: isLoadingPlantas } = useQuery<PlantaDto[]>({
     queryKey: ['plantas'],
     queryFn: apiService.getPlantas,
-    enabled: !plantaId && !eventToEdit,
+    enabled: !plantaId && !selectedPlantIds?.length && !eventToEdit,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
@@ -129,7 +122,7 @@ export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningF
   const onSubmit = (data: PruningFormData) => {
     const selectedPlantaId = plantaId || data.planta_id;
 
-    if (!selectedPlantaId) {
+    if (!selectedPlantaId && !selectedPlantIds?.length) {
       toast({
         variant: "destructive",
         title: "Selección Requerida",
@@ -140,7 +133,7 @@ export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningF
 
     const payload = {
       fecha: eventToEdit?.fecha || new Date().toISOString().split('T')[0],
-      plantaIds: [parseInt(selectedPlantaId)],
+      plantaIds: selectedPlantIds?.length ? selectedPlantIds : [parseInt(selectedPlantaId)],
       tipoPoda: data.tipo_poda,
     };
 
@@ -203,7 +196,7 @@ export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningF
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-          {!plantaId && !eventToEdit && (
+          {!plantaId && !eventToEdit && !selectedPlantIds?.length && (
             <FormField
               control={form.control}
               name="planta_id"
@@ -260,10 +253,7 @@ export const PruningForm = ({ onBack, onClose, plantaId, eventToEdit }: PruningF
                   <SelectContent>
                     {TIPOS_PODA.map((tipo) => (
                       <SelectItem key={tipo.value} value={tipo.value}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{tipo.label}</span>
-                          <span className="text-xs text-muted-foreground">{tipo.description}</span>
-                        </div>
+                        {tipo.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -1,6 +1,5 @@
 import { ArrowLeft, Calendar, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,20 +14,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto } from "@/interfaces/Planta";
 import { BackendEvent } from "@/interfaces/Eventos";
-import { UniversalEntryForm } from "@/components/forms/UniversalEntryForm";
 import { PlantProfile } from "@/components/plants/PlantProfile";
 import { EventFilters } from "@/components/plants/EventFilters";
 import { EventCard } from "@/components/plants/EventCard";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useRegistroEventoFormStore } from "@/stores/useRegistroEventoFormStore";
 
 export default function PlantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { openMenuWithPlanta } = useRegistroEventoFormStore();
   const [isDeletePlantOpen, setIsDeletePlantOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<BackendEvent | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<string>("todos");
 
   const { data: planta, isLoading: isLoadingPlanta, isError: isErrorPlanta } = useQuery<PlantaDto>({
@@ -80,22 +78,12 @@ export default function PlantDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['plantas'] });
       queryClient.invalidateQueries({ queryKey: ['plantas', 'sala', planta?.salaId] });
       queryClient.invalidateQueries({ queryKey: ['zonas', 'sala', planta?.salaId] });
-      navigate('/plantas');
+      navigate('/profile');
     },
     onError: () => {
       toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar la planta." });
     },
   });
-
-  const handleAddEvent = () => {
-    setEditingEvent(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditEvent = (event: BackendEvent) => {
-    setEditingEvent(event);
-    setIsModalOpen(true);
-  };
 
   const handleDeleteEvent = (event: BackendEvent) => {
     if (window.confirm(`¿Eliminar este evento de ${event.eventType}?`)) {
@@ -109,24 +97,13 @@ export default function PlantDetailPage() {
   return (
     <div className="min-h-screen w-full bg-background p-4 sm:p-6 lg:p-8">
       <header className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/plantas')} className="mr-4">
-              <ArrowLeft size={20} />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center">
-                <Calendar size={28} className="mr-3 text-primary" />
-                Bitácora de {planta.nombre}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleAddEvent}>
-              <Plus className="mr-2 h-4 w-4" /> Registrar Evento
-            </Button>
-          </div>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+          </Button>
+          <Button onClick={() => openMenuWithPlanta(Number(id))}>
+            <Plus className="mr-2 h-4 w-4" /> Registrar Evento
+          </Button>
         </div>
       </header>
 
@@ -158,7 +135,7 @@ export default function PlantDetailPage() {
             <div className="text-center py-12 text-muted-foreground">
               <Calendar className="mx-auto mb-4" size={48} />
               <p>No hay eventos registrados {selectedEventType !== "todos" && "de este tipo"}.</p>
-              <Button onClick={handleAddEvent} className="mt-4">
+              <Button onClick={() => openMenuWithPlanta(Number(id))} className="mt-4">
                 <Plus className="mr-2" /> Registrar Primer Evento
               </Button>
             </div>
@@ -168,7 +145,7 @@ export default function PlantDetailPage() {
                 <EventCard
                   key={event.id}
                   event={event}
-                  onEdit={() => handleEditEvent(event)}
+                  onEdit={() => {}}
                   onDelete={() => handleDeleteEvent(event)}
                 />
               ))}
@@ -176,25 +153,6 @@ export default function PlantDetailPage() {
           )}
         </div>
       </main>
-
-      {/* Dialog para agregar/editar eventos */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingEvent ? 'Editar Evento' : 'Registrar Nuevo Evento'}</DialogTitle>
-            <DialogDescription>
-              {editingEvent
-                ? 'Modifica los datos del evento'
-                : 'Completa los datos para registrar un nuevo evento'}
-            </DialogDescription>
-          </DialogHeader>
-          <UniversalEntryForm
-            plantaId={id!}
-            onClose={() => setIsModalOpen(false)}
-            defaultType={editingEvent?.eventType as any || "NOTE"}
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog eliminar planta */}
       <AlertDialog open={isDeletePlantOpen} onOpenChange={setIsDeletePlantOpen}>

@@ -1,18 +1,9 @@
 import { PlantaDto } from '@/interfaces/Planta'
+import { BackendEvent } from '@/interfaces/Eventos'
 import { useOperationalMetrics } from './metrics/useOperationalMetrics'
 import { useQualityMetrics } from './metrics/useQualityMetrics'
 import { usePerformanceMetrics } from './metrics/usePerformanceMetrics'
 import { useTemporalMetrics } from './metrics/useTemporalMetrics'
-
-/**
- * Interface para eventos backend
- */
-interface BackendEvent {
-    id: number
-    eventType: string
-    fecha: string
-    plantaIds: number[]
-}
 
 /**
  * ================================================

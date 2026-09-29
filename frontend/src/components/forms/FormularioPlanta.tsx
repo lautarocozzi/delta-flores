@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormInputField } from "./FormInputField";
 import { FormSelectField } from "./FormSelectField";
-import { FormCheckboxField } from "./FormCheckboxField";
 import { Loader2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,7 +18,6 @@ const plantaFormSchema = z.object({
     cepaId: z.string().min(1, "La genética es requerida"),
     ubicacion: z.string().optional(),
     produccion: z.string().optional(),
-    isPublic: z.boolean().optional(),
     fechaFin: z.string().optional(),
     imagenUrl: z.string().optional(),
 });
@@ -63,7 +61,6 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
             cepaId: initialData?.cepaDto?.id?.toString() || '',
             ubicacion: initialData?.ubicacion || '',
             produccion: initialData?.produccion?.toString() || '',
-            isPublic: initialData?.isPublic || false,
             fechaFin: initialData?.fechaFin || '',
             imagenUrl: initialData?.imagenUrl || '',
         },
@@ -78,7 +75,6 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
                 cepaId: parseInt(data.cepaId),
                 ubicacion: data.ubicacion || null,
                 produccion: data.produccion ? parseInt(data.produccion) : 0,
-                isPublic: data.isPublic || false,
                 fechaFin: data.fechaFin || null,
                 imagenUrl: data.imagenUrl || null,
             };
@@ -234,13 +230,6 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
                         optional
                     />
                 </div>
-
-                <FormCheckboxField
-                    control={form.control}
-                    name="isPublic"
-                    label="Planta Pública"
-                    description="Permitir que otros usuarios vean esta planta"
-                />
 
                 <FormInputField
                     control={form.control}

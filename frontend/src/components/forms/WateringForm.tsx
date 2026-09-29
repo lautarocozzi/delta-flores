@@ -26,17 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto } from "@/interfaces/Planta";
 import { useToast } from "@/hooks/use-toast";
-
-// Tipos para el evento de backend (simplificado para Wateriung)
-interface BackendEvent {
-  id: number;
-  eventType: string;
-  fecha: string;
-  plantaIds: number[];
-  phAgua?: number;
-  ecAgua?: number;
-  tempAgua?: number;
-}
+import { BackendEvent } from "@/interfaces/Eventos";
 
 const wateringSchema = z.object({
   planta_id: z.string().optional(),
@@ -50,11 +40,12 @@ type WateringFormData = z.infer<typeof wateringSchema>;
 interface WateringFormProps {
   onBack: () => void;
   onClose: () => void;
-  plantaId?: string; // Prop opcional para contexto pre-seleccionado (creación)
-  eventToEdit?: BackendEvent; // Prop opcional para modo edición
+  plantaId?: string;
+  selectedPlantIds?: number[];
+  eventToEdit?: BackendEvent;
 }
 
-export const WateringForm = ({ onBack, onClose, plantaId, eventToEdit }: WateringFormProps) => {
+export const WateringForm = ({ onBack, onClose, plantaId, selectedPlantIds, eventToEdit }: WateringFormProps) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -63,15 +54,16 @@ export const WateringForm = ({ onBack, onClose, plantaId, eventToEdit }: Waterin
   const { data: plantas = [], isLoading: isLoadingPlantas } = useQuery<PlantaDto[]>({
     queryKey: ['plantas'],
     queryFn: apiService.getPlantas,
-    enabled: !plantaId && !eventToEdit, // Solo cargar si no hay contexto y no estamos editando
+    enabled: !plantaId && !selectedPlantIds?.length && !eventToEdit,
   });
 
   const createWateringMutation = useMutation({
     mutationFn: apiService.createWateringEvent,
     onSuccess: (data) => {
+      const count = data.plantaIds?.length || 1;
       toast({
         title: "¡Riego Registrado!",
-        description: `El riego para la planta (ID: ${data.plantaIds[0]}) ha sido registrado.`,
+        description: `El riego para ${count} planta${count !== 1 ? 's' : ''} ha sido registrado.`,
       });
       setIsSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['plantEvents'] });
@@ -130,7 +122,7 @@ export const WateringForm = ({ onBack, onClose, plantaId, eventToEdit }: Waterin
   const onSubmit = (data: WateringFormData) => {
     const selectedPlantaId = plantaId || data.planta_id;
 
-    if (!selectedPlantaId) {
+    if (!selectedPlantaId && !selectedPlantIds?.length) {
       toast({
         variant: "destructive",
         title: "Selección Requerida",
@@ -141,7 +133,7 @@ export const WateringForm = ({ onBack, onClose, plantaId, eventToEdit }: Waterin
 
     const payload = {
       fecha: eventToEdit?.fecha || new Date().toISOString().split('T')[0],
-      plantaIds: [parseInt(selectedPlantaId)],
+      plantaIds: selectedPlantIds?.length ? selectedPlantIds : [parseInt(selectedPlantaId)],
       phAgua: data.ph_agua ? parseFloat(data.ph_agua) : 0.0,
       ecAgua: data.ec_agua ? parseFloat(data.ec_agua) : 0.0,
       tempAgua: data.temp_agua ? parseFloat(data.temp_agua) : 0.0,
@@ -206,7 +198,7 @@ export const WateringForm = ({ onBack, onClose, plantaId, eventToEdit }: Waterin
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-          {!plantaId && !eventToEdit && (
+          {!plantaId && !eventToEdit && !selectedPlantIds?.length && (
             <FormField
               control={form.control}
               name="planta_id"

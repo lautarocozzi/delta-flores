@@ -1,15 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Leaf, Thermometer, Droplets, ChevronRight, Sun, Home } from "lucide-react";
-import { SalaDto } from "@/interfaces/Planta";
+import { SalaDto } from "@/schemas/DTOSchemas";
 import { cn } from "@/lib/utils";
 
 // Default images for SALAS (rooms) - NOT plant images
-// These represent the physical space/environment
 const DEFAULT_SALA_IMAGES = {
-    INTERIOR: "/FONDO_BLOG_1.png",  // Indoor room with LED lights
-    EXTERIOR: "/FONDO_BLOG_2.png",  // Outdoor environment
-    DEFAULT: "/FONDO_BLOG_1.png",   // Default fallback
+    INTERIOR: "/FONDO_BLOG_1.png",
+    EXTERIOR: "/FONDO_BLOG_2.png",
+    DEFAULT: "/FONDO_BLOG_1.png",
 };
 
 interface SalaCardProps {
@@ -24,13 +23,11 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
     const handleClick = () => {
         if (onClick) {
             onClick();
-        } else {
-            navigate(`/sala/${sala.id}`);
+        } else if (sala.ownerUsername) {
+            navigate(`/${sala.ownerUsername}/sala/${sala.id}`);
         }
     };
 
-    // Determine image: custom > tipoAmbiente default > generic default
-    // Note: These are SALA images (environments), not plant images
     const getImageUrl = () => {
         if (sala.imagenUrl) return sala.imagenUrl;
         if (sala.tipoAmbiente === 'INTERIOR') return DEFAULT_SALA_IMAGES.INTERIOR;
@@ -49,9 +46,9 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
             className={cn(
                 "group relative overflow-hidden rounded-xl cursor-pointer",
                 "bg-card border border-border",
-                "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
                 "transition-colors duration-300",
-                "h-[200px] w-full min-w-[200px]"
+                "h-[200px] w-full min-w-[200px]",
+                "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
             )}
         >
             {/* Top Half: Image */}
@@ -59,15 +56,14 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
                 <img
                     src={imageUrl}
                     alt={sala.nombre}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
 
-                {/* Gradient overlay for seamless transition */}
+                {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
 
                 {/* Badges row */}
                 <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                    {/* Tipo ambiente badge */}
                     {sala.tipoAmbiente && (
                         <div className={cn(
                             "flex items-center gap-1 px-1.5 py-0.5 rounded-full backdrop-blur-sm text-[10px] font-medium",
@@ -81,7 +77,6 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
                             }
                         </div>
                     )}
-                    {/* Plant count badge */}
                     <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm">
                         <Leaf className="w-3 h-3 text-primary" />
                         <span className="text-xs font-medium text-foreground">{plantCount}</span>
@@ -91,9 +86,8 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
 
             {/* Bottom Half: Data */}
             <div className="h-1/2 p-3 flex flex-col justify-between">
-                {/* Room name */}
                 <div>
-                    <h3 className="font-bold text-foreground text-base truncate group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-base truncate text-foreground group-hover:text-primary transition-colors">
                         {sala.nombre}
                     </h3>
                     <p className="text-xs text-muted-foreground">
@@ -101,16 +95,15 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
                     </p>
                 </div>
 
-                {/* Room stats row */}
                 <div className="flex items-center justify-between">
                     <div className="flex gap-3 text-xs text-muted-foreground">
-                        {sala.temperaturaAmbiente && (
+                        {sala.temperaturaAmbiente != null && (
                             <div className="flex items-center gap-1">
                                 <Thermometer className="w-3 h-3 text-orange-400" />
                                 <span>{sala.temperaturaAmbiente}°C</span>
                             </div>
                         )}
-                        {sala.humedad && (
+                        {sala.humedad != null && (
                             <div className="flex items-center gap-1">
                                 <Droplets className="w-3 h-3 text-blue-400" />
                                 <span>{sala.humedad}%</span>
@@ -118,12 +111,11 @@ export function SalaCard({ sala, plantCount, onClick }: SalaCardProps) {
                         )}
                     </div>
 
-                    {/* Arrow indicator */}
                     <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
             </div>
 
-            {/* Hover glow effect */}
+            {/* Hover glow */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
             </div>
