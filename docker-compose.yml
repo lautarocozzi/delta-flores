@@ -14,8 +14,6 @@
 # Si querés funcionalidad completa, usá --profile minio.
 # ================================================================
 
-version: '3.8'
-
 services:
 
   # ================================
@@ -24,7 +22,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: flores-delta-db
-    restart: unless-stopped
+    restart: "no"
     environment:
       POSTGRES_DB: ${DB_NAME:-flores_delta_db}
       POSTGRES_USER: ${DB_USERNAME:-flores_user}
@@ -50,7 +48,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: flores-delta-backend
-    restart: unless-stopped
+    restart: "no"
     environment:
       # PostgreSQL
       DB_HOST: postgres
@@ -83,31 +81,30 @@ services:
       start_period: 90s
 
   # ================================
-  # FRONTEND (React + Vite + Nginx)
+  # FRONTEND (React + Vite — Hot Reload)
   # ================================
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # La URL del backend desde el browser. localhost:8080 funciona
-        # porque Docker mapea el puerto 8080 del backend al host.
-        # No usar "http://backend:8080" — el browser NO resuelve "backend".
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      dockerfile: Dockerfile.dev
     container_name: flores-delta-frontend
-    restart: unless-stopped
+    restart: "no"
     ports:
-      - "80:80"
+      - "5173:8081"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:8080}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - backend
     networks:
       - flores-network
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health" ]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+      disable: true
 
   # ================================
   # OBJECT STORAGE (MinIO)
@@ -118,7 +115,7 @@ services:
     profiles: [ "minio", "full" ]
     image: minio/minio:latest
     container_name: flores-delta-minio
-    restart: unless-stopped
+    restart: "no"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}

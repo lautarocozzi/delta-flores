@@ -1,150 +1,113 @@
-# 🌱 Flores Delta - Cannabis Cultivation Management System
+# Flores Delta
 
-> Full-stack application for professional cannabis cultivation tracking and management
+Sistema de gestion de cultivo cannabis profesional.
 
-[![Backend](https://img.shields.io/badge/Backend-Spring%20Boot%203.2-green)](delta-flores/)
-[![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%2B%20TS-blue)](FLORES-DELTA-FRONTEND/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-
-## 📋 Overview
-
-Flores Delta is a comprehensive cultivation management system designed for professional cannabis growers. It provides end-to-end tracking of plants, environmental conditions, growth stages, and cultivation events.
-
-### Key Features
-
-- 🌿 **Plant Management**: Track individual plants through their entire lifecycle
-- 🏠 **Room/Space Management**: Monitor environmental conditions per cultivation area
-- 🧬 **Genetics Database**: Manage strain information and characteristics
-- 📊 **Event Logging**: Record watering, pruning, nutrient application, and more
-- 👥 **Multi-user Support**: Role-based access control (Grower, Admin, Super Admin)
-- 📈 **Analytics Dashboard**: KPIs and insights on cultivation performance
-
-## 🏗️ Architecture
-
-```
-flores-delta-mvp/
-├── delta-flores/     Spring Boot 3.2 + PostgreSQL
-├── FLORES-DELTA-FRONTEND/  React 18 + TypeScript + Vite
-└── docs/            Architecture & guides
-```
-
-### Tech Stack
-
-**Backend:**
-- Java 17
-- Spring Boot 3.2.x
-- Spring Security (JWT)
-- PostgreSQL 15
-- Hibernate/JPA
-- MinIO (object storage)
-
-**Frontend:**
-- React 18
-- TypeScript 5
-- Vite
-- TanStack Query (React Query)
-- Zod (runtime validation)
-- Tailwind CSS + shadcn/ui
-- Recharts
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Java 21+
-- Node.js 18+
-- PostgreSQL 15
-- Maven 3.8+ (included via mvnw)
-
-### Option 1: Docker Compose (Recommended)
+## Levantar el proyecto
 
 ```bash
-# Copiar variables de entorno
-cp .env.example .env
-
-# Arrancar stack completo
-docker-compose up -d
-
-# Acceder a:
-# - Frontend: http://localhost
-# - Backend API: http://localhost:8080
-# - MinIO Console: http://localhost:9001
-
-```
-##🐳 Docker (recomendado)
-cp .env.example .env
-docker compose up -d                           # CRUD básico
-docker compose --profile minio up -d           # + fotos/media
-- Frontend: http://localhost
-- API: http://localhost:8080
-
-##💻 Modo desarrollo
-# Backend
-cd delta-flores/web && ./mvnw spring-boot:run
-# Frontend (otra terminal)
-cd FLORES-DELTA-FRONTEND && npm install && npm run dev
-- Frontend: http://localhost:5173
-- API: http://localhost:8080
-Credenciales por defecto: admin@delta.com / admin123
-Ver [README-DOCKER.md](README-DOCKER.md) para detalles completos.
-
-### Option 2: Development Mode
-
-**Backend:**
-```bash
-cd delta-flores/web
-./mvnw spring-boot:run
+docker compose up -d --build
 ```
 
-Backend runs on `http://localhost:8080`
+Eso es todo. Levanta PostgreSQL, backend (Spring Boot) y frontend (Vite con hot-reload).
 
-See [delta-flores/README.md](delta-flores/README.md) for detailed setup.
+### URLs
 
-**Frontend:**
-```bash
-cd FLORES-DELTA-FRONTEND
-npm install
-npm run dev
-```
+| Servicio   | URL                          |
+| ---------- | ---------------------------- |
+| Frontend   | http://localhost:5173         |
+| Backend    | http://localhost:8080         |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| MinIO      | http://localhost:9001 (con `--profile minio`) |
 
-Frontend runs on `http://localhost:5173`
-
-See [FLORES-DELTA-FRONTEND/README.md](FLORES-DELTA-FRONTEND/README.md) for detailed setup.
-
-### Default Credentials
+### Credenciales por defecto
 
 - Email: `admin@delta.com`
 - Password: `admin123`
 
-## 📚 Documentation
-
-- [Architecture Overview](docs/architecture/ARQUITECTURA_FILOSOFIA_SOCIO.md)
-- [Development Setup](docs/guides/INSTRUCCIONES_ARRANQUE.md)
-- [Docker Deployment](README-DOCKER.md)
-- [Testing Manual](docs/audits/CHECKPOINT_TESTING_MANUAL.md)
-
-## 🧪 Testing
+### Con almacenamiento de archivos (MinIO)
 
 ```bash
-# Backend tests
-cd delta-flores/web
-./mvnw test
-
-# Frontend tests
-cd FLORES-DELTA-FRONTEND
-npm run test
+docker compose --profile minio up -d --build
 ```
 
-## 📄 License
+## Comandos utiles
 
-This project is licensed under the MIT License.
+### Levantar
 
-## 👨‍💻 Authors
+```bash
+docker compose up -d --build                           # stack basico
+docker compose --profile minio up -d --build           # + MinIO (fotos/media)
+```
 
-- **Backend Architecture** - LautaroCozzi
-- **Frontend Development** - NahuelBarbero
+### Parar (mantiene contenedores y datos)
 
----
+```bash
+docker compose stop                                    # parar todo
+docker compose stop frontend                           # parar solo el frontend
+docker compose stop backend                            # parar solo el backend
+docker compose --profile minio stop                    # parar todo incluyendo MinIO
+```
 
-**Status:** 🟢 Production Ready | **Version:** 1.0.0 MVP
+### Bajar (parar + eliminar contenedores, mantiene volumenes)
 
+```bash
+docker compose down                                    # bajar todo
+docker compose --profile minio down                    # bajar todo incluyendo MinIO
+```
+
+### Bajar y limpiar todo (contenedores + volumenes + redes)
+
+```bash
+docker compose down -v                                 # ELIMINA la base de datos
+docker compose --profile minio down -v                  # ELIMINA todo incluyendo MinIO
+```
+
+### Rebuild completo
+
+```bash
+docker compose up -d --build --force-recreate          # recrear desde cero
+```
+
+### Ver logs
+
+```bash
+docker compose logs -f                                 # todos los servicios
+docker compose logs -f frontend                        # solo el frontend
+docker compose logs -f backend                         # solo el backend
+```
+
+## Desarrollo local
+
+El frontend ya levanta con **hot-reload** dentro de Docker. Editás un archivo en `frontend/src/` y se recarga solo.
+
+### Backend (fuera de Docker)
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+### Frontend (fuera de Docker)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Stack tecnico
+
+- **Backend**: Java 21, Spring Boot 3.2, Spring Security JWT, PostgreSQL 15, MinIO
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Recharts
+- **Infra**: Docker Compose, Vite dev server (hot-reload)
+
+## Arquitectura
+
+```
+FLORESDELTA/
+├── backend/          Spring Boot API
+├── frontend/         React + Vite
+├── docker-compose.yml
+├── .env.example
+└── docs/
+```

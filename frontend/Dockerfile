@@ -3,9 +3,9 @@
 # ================================
 FROM node:18-alpine AS builder
 
-# ARG para VITE_API_URL (se hornea en build time de Vite)
-ARG VITE_API_URL=http://localhost:8080
-ENV VITE_API_URL=$VITE_API_URL
+# ARG para VITE_BACKEND_URL (se hornea en build time de Vite)
+ARG VITE_BACKEND_URL=http://localhost:8080
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
 WORKDIR /app
 
@@ -37,7 +37,7 @@ EXPOSE 80
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1/health || exit 1
 
 # Nginx en foreground
 CMD ["nginx", "-g", "daemon off;"]
