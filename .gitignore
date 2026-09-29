@@ -45,6 +45,9 @@ logs/
 *.tmp
 temp_*
 
+# ===== CACHES GENERADAS =====
+.atl/.skill-registry.cache.json
+
 # ===== REFERENCIAS LOCALES (NO SUBIR A GITHUB) =====
 Fotos FD/
 Fotos GWJ/
