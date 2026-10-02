@@ -114,9 +114,19 @@ export function AppSidebar() {
           </SidebarMenuItem>
           {isAdmin && (
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => navigate('/admin/comunidad')} className="hover:bg-accent/50">
+              <SidebarMenuButton onClick={() => navigate('/admin')} className="hover:bg-accent/50">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/20 p-1 rounded-full"><ShieldAlert size={16} className="text-primary" /></div>
+                  <span>Admin</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => navigate('/admin/comunidad')} className="hover:bg-accent/50">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary/20 p-1 rounded-full"><Users size={16} className="text-primary" /></div>
                   <span>Admin Comunidad</span>
                 </div>
               </SidebarMenuButton>

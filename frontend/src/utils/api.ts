@@ -1,8 +1,22 @@
 import axios from 'axios';
 import { authService } from '../services/auth';
 
-// Base URL configuration
-const urlBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080/';
+// Same-origin on the dev server so /api is proxied by Vite.
+// A hardcoded localhost:8080 fails from another machine on the LAN
+// (the browser calls its own localhost and gets connection refused).
+function resolveBackendUrl(): string {
+    if (typeof window !== "undefined") {
+        const port = window.location.port;
+        if (port === "5173" || port === "8081") {
+            return "";
+        }
+    }
+    const configured = import.meta.env.VITE_BACKEND_URL as string | undefined;
+    if (!configured) return "http://localhost:8080";
+    return configured.replace(/\/$/, "");
+}
+
+const urlBase = resolveBackendUrl();
 
 export { urlBase };
 

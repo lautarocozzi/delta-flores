@@ -16,7 +16,7 @@ import FavoritosPage from "@/pages/FavoritosPage";
 import ComunidadPage from "@/pages/ComunidadPage";
 import PostDetailPage from "@/pages/PostDetailPage";
 import AdminComunidadPage from "@/pages/AdminComunidadPage";
-import AdminUsuariosPage from "@/pages/AdminUsuariosPage";
+import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/NotFound";
 
 export function AppRoutes() {
@@ -29,8 +29,9 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/comunidad" element={<ComunidadPage />} />
         <Route path="/comunidad/:postId" element={<PostDetailPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/comunidad" element={<AdminComunidadPage />} />
-        <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
+        <Route path="/admin/usuarios" element={<Navigate to="/admin" replace />} />
         <Route path="/plant/:id" element={<PlantDetailPage />} />
         <Route path="/plantas/:id/editar" element={<EditPlantPage />} />
         <Route path="/bitacora" element={<MainLogPage />} />
