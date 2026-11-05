@@ -9,20 +9,13 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { getEtapaLabel } from "@/lib/etapas";
 
 interface PlantProfileProps {
     planta: PlantaDto;
     onEdit: () => void;
     onDelete: () => void;
 }
-
-const ETAPA_LABELS: Record<string, string> = {
-    GERMINACION: "Germinación",
-    PLANTIN: "Plantín",
-    VEGETACION: "Vegetación",
-    FLORACION: "Floración",
-    COSECHADA: "Cosechada",
-};
 
 const getPlantImage = (planta: PlantaDto): string => {
     if (planta.imagenUrl) return planta.imagenUrl;
@@ -32,8 +25,10 @@ const getPlantImage = (planta: PlantaDto): string => {
 };
 
 export const PlantProfile = ({ planta, onEdit, onDelete }: PlantProfileProps) => {
-    const diasActiva = differenceInDays(new Date(), new Date(planta.fechaCreacion));
-    const etapaLabel = ETAPA_LABELS[planta.etapa] || planta.etapa;
+    // Same anchor as the weekly timeline: the sowing date is the true start of the plant's life.
+    const anchorFecha = planta.fecha_siembra ?? planta.fechaCreacion;
+    const diasActiva = differenceInDays(new Date(), new Date(anchorFecha));
+    const etapaLabel = getEtapaLabel(planta.etapa);
     const plantImage = getPlantImage(planta);
     const [imageHover, setImageHover] = useState(false);
     const queryClient = useQueryClient();
@@ -99,7 +94,7 @@ export const PlantProfile = ({ planta, onEdit, onDelete }: PlantProfileProps) =>
                                 <p className="text-sm text-muted-foreground">Tiempo Activa</p>
                                 <p className="font-semibold">{diasActiva} días</p>
                                 <p className="text-xs text-muted-foreground">
-                                    Desde {format(new Date(planta.fechaCreacion), "dd MMM yyyy", { locale: es })}
+                                    Desde {format(new Date(anchorFecha), "dd MMM yyyy", { locale: es })}
                                 </p>
                             </div>
                         </div>

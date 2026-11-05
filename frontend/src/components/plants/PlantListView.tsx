@@ -3,21 +3,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Leaf, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { getEtapaColor } from "@/lib/etapas";
 
 interface PlantListViewProps {
   plantas: PlantaDto[];
 }
 
-const ETAPA_COLORS: Record<string, string> = {
-  GERMINACION: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  PLANTIN: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  VEGETACION: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-  FLORACION: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  COSECHADA: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-};
-
-function getDaysOld(fechaCreacion: string): number {
-  return Math.floor((new Date().getTime() - new Date(fechaCreacion).getTime()) / (1000 * 3600 * 24));
+function getDaysOld(desde: string): number {
+  return Math.floor((new Date().getTime() - new Date(desde).getTime()) / (1000 * 3600 * 24));
 }
 
 export function PlantListView({ plantas }: PlantListViewProps) {
@@ -62,7 +55,7 @@ export function PlantListView({ plantas }: PlantListViewProps) {
               <TableCell>
                 <Badge
                   variant="outline"
-                  className={`font-normal ${ETAPA_COLORS[plant.etapa] || ""}`}
+                  className={`font-normal ${getEtapaColor(plant.etapa)}`}
                 >
                   <Leaf size={12} className="mr-1" />
                   {plant.etapa}
@@ -75,7 +68,7 @@ export function PlantListView({ plantas }: PlantListViewProps) {
               <TableCell className="text-right text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <Clock size={12} />
-                  {getDaysOld(plant.fechaCreacion)} días
+                  {getDaysOld(plant.fecha_siembra ?? plant.fechaCreacion)} días
                 </span>
               </TableCell>
             </TableRow>
