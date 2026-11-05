@@ -24,6 +24,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { SalaDto, CepaDto, ZonaDto, PlantaDto } from "@/interfaces/Planta";
+import { fechaSiembraSchema } from "@/schemas/DTOSchemas";
 import { useToast } from "@/hooks/use-toast";
 import { FormInputField } from "./FormInputField";
 import { FormCheckboxField } from "./FormCheckboxField";
@@ -36,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 const newPlantSchema = z.object({
   genetica_id: z.string().min(1, "La genética es requerida"),
   etiqueta: z.string().min(1, "La etiqueta es requerida"),
-  fecha_siembra: z.string().min(1, "La fecha de siembra es requerida"),
+  fecha_siembra: fechaSiembraSchema,
   espacio_id: z.string().min(1, "El espacio es requerido"),
   etapa_enum: z.enum(['GERMINACION', 'PLANTIN', 'VEGETACION', 'FLORACION', 'COSECHADA']),
   isPublic: z.boolean().optional(),
@@ -199,7 +200,7 @@ export const NewPlantForm = ({ onBack, onClose, contextSalaId }: NewPlantFormPro
     const payload = {
       nombre: data.etiqueta,
       etapa: data.etapa_enum,
-      fechaCreacion: data.fecha_siembra,
+      fecha_siembra: data.fecha_siembra,
       salaId: parseInt(data.espacio_id),
       cepaId: parseInt(data.genetica_id),
       produccion: data.produccion ? parseInt(data.produccion) : 0,

@@ -4,6 +4,7 @@ import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/services/api";
 import { PlantaDto, SalaDto, CepaDto } from "@/interfaces/Planta";
+import { fechaSiembraSchema } from "@/schemas/DTOSchemas";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormInputField } from "./FormInputField";
@@ -19,6 +20,9 @@ const plantaFormSchema = z.object({
     ubicacion: z.string().optional(),
     produccion: z.string().optional(),
     fechaFin: z.string().optional(),
+    // Empty string means "do not change / null" on edit; the shared schema forbids the empty
+    // value, so allow it explicitly. On submit it is converted to null.
+    fechaSiembra: fechaSiembraSchema.or(z.literal('')).optional(),
     imagenUrl: z.string().optional(),
 });
 
@@ -62,6 +66,7 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
             ubicacion: initialData?.ubicacion || '',
             produccion: initialData?.produccion?.toString() || '',
             fechaFin: initialData?.fechaFin || '',
+            fechaSiembra: initialData?.fecha_siembra || '',
             imagenUrl: initialData?.imagenUrl || '',
         },
     });
@@ -76,6 +81,7 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
                 ubicacion: data.ubicacion || null,
                 produccion: data.produccion ? parseInt(data.produccion) : 0,
                 fechaFin: data.fechaFin || null,
+                fecha_siembra: data.fechaSiembra || null,
                 imagenUrl: data.imagenUrl || null,
             };
 
@@ -226,6 +232,14 @@ export const FormularioPlanta = ({ mode, initialData, onSuccess }: FormularioPla
                         control={form.control}
                         name="fechaFin"
                         label="Fecha de Finalización"
+                        type="date"
+                        optional
+                    />
+
+                    <FormInputField
+                        control={form.control}
+                        name="fechaSiembra"
+                        label="Fecha de Siembra"
                         type="date"
                         optional
                     />
