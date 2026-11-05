@@ -126,6 +126,7 @@ public final class DtoMapper {
         plantaDto.setImagenUrl(planta.getImagenUrl());
         plantaDto.setProduccion(planta.getProduccion());
         plantaDto.setFechaCreacion(planta.getFechaCreacion());
+        plantaDto.setFechaSiembra(planta.getFechaSiembra());
         if (planta.getSala() != null) {
             plantaDto.setSalaId(planta.getSala().getId());
             // Popular objeto completo para frontend
@@ -167,11 +168,13 @@ public final class DtoMapper {
         planta.setNombre(plantaDto.getNombre());
         planta.setPublic(plantaDto.isPublic());
         planta.setEtapa(plantaDto.getEtapa());
-        planta.setFechaCreacion(plantaDto.getFechaCreacion());
         planta.setUbicacion(plantaDto.getUbicacion());
         planta.setImagenUrl(plantaDto.getImagenUrl());
         planta.setProduccion(plantaDto.getProduccion());
         planta.setFechaFin(plantaDto.getFechaFin());
+        if (plantaDto.getFechaSiembra() != null) {
+            planta.setFechaSiembra(plantaDto.getFechaSiembra());
+        }
 
         // Set the entities that were fetched by the service
         planta.setCepa(cepa);

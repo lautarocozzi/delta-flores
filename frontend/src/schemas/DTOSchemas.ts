@@ -6,6 +6,14 @@ import { z } from 'zod';
  */
 
 // PlantaDto - Alineado con /delta-flores/web/src/main/java/DeltaFlores/web/dto/PlantaDto.java
+// Fuente única de la fecha de siembra (SD-6, SD-7): request y response usan esta definición.
+export const fechaSiembraSchema = z
+    .string()
+    .min(1, "La fecha de siembra es requerida")
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato esperado: yyyy-MM-dd");
+
+export const fechaSiembraResponseSchema = fechaSiembraSchema.nullable().optional();
+
 export const PlantaDtoSchema = z.object({
     id: z.number(),
     userId: z.number().optional(),
@@ -16,6 +24,7 @@ export const PlantaDtoSchema = z.object({
     produccion: z.number(),
     fechaCreacion: z.string(), // ISO date "yyyy-MM-dd"
     fechaFin: z.string().nullable().optional(),
+    fecha_siembra: fechaSiembraResponseSchema,
     eventIds: z.array(z.number()).nullable().optional(),
     cepaId: z.number(),
     ubicacion: z.string().nullable().optional(),
