@@ -17,6 +17,9 @@ import { BackendEvent } from "@/interfaces/Eventos";
 import { PlantProfile } from "@/components/plants/PlantProfile";
 import { EventFilters } from "@/components/plants/EventFilters";
 import { EventCard } from "@/components/plants/EventCard";
+import { WeeklyStageRail } from "@/components/plants/WeeklyStageRail";
+import { Badge } from "@/components/ui/badge";
+import { buildWeeklyTimeline } from "@/utils/timelineUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -28,6 +31,7 @@ export default function PlantDetailPage() {
   const { openMenuWithPlanta } = useRegistroEventoFormStore();
   const [isDeletePlantOpen, setIsDeletePlantOpen] = useState(false);
   const [selectedEventType, setSelectedEventType] = useState<string>("todos");
+  const [activeWeek, setActiveWeek] = useState<number | null>(null);
 
   const { data: planta, isLoading: isLoadingPlanta, isError: isErrorPlanta } = useQuery<PlantaDto>({
     queryKey: ['planta', id],
@@ -58,6 +62,13 @@ export default function PlantDetailPage() {
     });
     return counts;
   }, [events]);
+
+  // El timeline se calcula UNA vez con TODOS los eventos: la etapa no debe
+  // depender del filtro de tipo. El filtro se aplica por semana al renderizar.
+  const weeks = useMemo(
+    () => (planta ? buildWeeklyTimeline(planta, events) : []),
+    [planta, events],
+  );
 
   const deleteEventMutation = useMutation({
     mutationFn: ({ eventType, eventId }: { eventType: string; eventId: string }) =>
@@ -91,6 +102,13 @@ export default function PlantDetailPage() {
     }
   };
 
+  const handleWeekClick = (weekNumber: number) => {
+    setActiveWeek(weekNumber);
+    document
+      .getElementById(`week-group-${weekNumber}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   if (isLoadingPlanta) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" size={32} /></div>;
   if (isErrorPlanta || !planta) return <div className="p-8 text-center text-destructive">Error al cargar la planta o planta no encontrada.</div>;
 
@@ -115,6 +133,13 @@ export default function PlantDetailPage() {
           onDelete={() => setIsDeletePlantOpen(true)}
         />
 
+        {/* Riel de semanas */}
+        <WeeklyStageRail
+          weeks={weeks}
+          activeWeek={activeWeek}
+          onWeekClick={handleWeekClick}
+        />
+
         {/* Filtros de Eventos */}
         <EventFilters
           selectedType={selectedEventType}
@@ -131,25 +156,62 @@ export default function PlantDetailPage() {
               <Loader2 className="animate-spin text-primary mx-auto mb-2" size={32} />
               Cargando bitácora...
             </div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Calendar className="mx-auto mb-4" size={48} />
-              <p>No hay eventos registrados {selectedEventType !== "todos" && "de este tipo"}.</p>
-              <Button onClick={() => openMenuWithPlanta(Number(id))} className="mt-4">
-                <Plus className="mr-2" /> Registrar Primer Evento
-              </Button>
-            </div>
           ) : (
-            <div className="space-y-3">
-              {filteredEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onEdit={() => {}}
-                  onDelete={() => handleDeleteEvent(event)}
-                />
-              ))}
-            </div>
+            <>
+              {filteredEvents.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="mx-auto mb-4" size={48} />
+                  <p>No hay eventos registrados {selectedEventType !== "todos" && "de este tipo"}.</p>
+                  <Button onClick={() => openMenuWithPlanta(Number(id))} className="mt-4">
+                    <Plus className="mr-2" /> Registrar Primer Evento
+                  </Button>
+                </div>
+              )}
+
+              <div className="space-y-6">
+                {weeks.map((week) => {
+                  const weekEvents =
+                    selectedEventType === "todos"
+                      ? week.events
+                      : week.events.filter((event) => event.eventType === selectedEventType);
+
+                  return (
+                    <section
+                      key={week.weekNumber}
+                      id={`week-group-${week.weekNumber}`}
+                      className="scroll-mt-24 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">
+                          Semana {week.weekNumber} · {week.label}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                          {week.startLabel} – {week.endLabel}
+                        </span>
+                        {week.hasPreSowingEvents && (
+                          <Badge variant="outline">Antes de la siembra</Badge>
+                        )}
+                      </div>
+
+                      {weekEvents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sin eventos</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {weekEvents.map((event) => (
+                            <EventCard
+                              key={event.id}
+                              event={event}
+                              onEdit={() => {}}
+                              onDelete={() => handleDeleteEvent(event)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </main>
