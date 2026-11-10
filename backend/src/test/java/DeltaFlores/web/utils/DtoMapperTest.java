@@ -1,8 +1,13 @@
 package DeltaFlores.web.utils;
 
+import DeltaFlores.web.dto.PlantaDto;
+import DeltaFlores.web.entities.NuevaEtapa;
+import DeltaFlores.web.entities.Planta;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -83,6 +88,93 @@ class DtoMapperTest {
         void testNullColumnaOnly() {
             String result = DtoMapper.generarUbicacion("A", null, 3);
             assertEquals("A-F4-C?", result);
+        }
+    }
+
+    // =========================================================================
+    // fechaSiembra mapping tests (SD-2, SD-3)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("fechaSiembra mapping")
+    class FechaSiembraMappingTests {
+
+        @Test
+        @DisplayName("plantaToPlantaDto should copy fechaSiembra (round-trip)")
+        void testRoundTripPreservesFechaSiembra() {
+            LocalDate siembra = LocalDate.of(2026, 1, 10);
+            Planta planta = plantaBase();
+            planta.setFechaSiembra(siembra);
+
+            PlantaDto dto = DtoMapper.plantaToPlantaDto(planta);
+
+            assertEquals(siembra, dto.getFechaSiembra());
+
+            Planta target = new Planta();
+            DtoMapper.plantaDtoToPlanta(target, dto, null, null, null);
+
+            assertEquals(siembra, target.getFechaSiembra());
+        }
+
+        @Test
+        @DisplayName("plantaDtoToPlanta should keep existing fechaSiembra when DTO sends null")
+        void testNullFechaSiembraDoesNotWipeExistingValue() {
+            LocalDate existing = LocalDate.of(2025, 12, 1);
+            Planta planta = plantaBase();
+            planta.setFechaSiembra(existing);
+
+            PlantaDto dto = new PlantaDto();
+            dto.setNombre("Planta parcial");
+            dto.setEtapa(NuevaEtapa.VEGETACION);
+            dto.setFechaSiembra(null);
+
+            DtoMapper.plantaDtoToPlanta(planta, dto, null, null, null);
+
+            assertEquals(existing, planta.getFechaSiembra(),
+                    "Un update sin fecha_siembra no debe borrar el valor existente");
+        }
+
+        @Test
+        @DisplayName("plantaDtoToPlanta should apply non-null fechaSiembra")
+        void testNonNullFechaSiembraUpdatesValue() {
+            Planta planta = plantaBase();
+            planta.setFechaSiembra(LocalDate.of(2025, 12, 1));
+
+            PlantaDto dto = new PlantaDto();
+            dto.setNombre("Planta editada");
+            dto.setEtapa(NuevaEtapa.FLORACION);
+            dto.setFechaSiembra(LocalDate.of(2025, 11, 15));
+
+            DtoMapper.plantaDtoToPlanta(planta, dto, null, null, null);
+
+            assertEquals(LocalDate.of(2025, 11, 15), planta.getFechaSiembra());
+        }
+
+        @Test
+        @DisplayName("plantaDtoToPlanta should not overwrite fechaCreacion on partial update")
+        void testUpdateDoesNotWipeFechaCreacion() {
+            LocalDate fechaCreacion = LocalDate.of(2026, 1, 1);
+            Planta planta = plantaBase();
+            planta.setFechaCreacion(fechaCreacion);
+            planta.setFechaSiembra(LocalDate.of(2025, 12, 1));
+
+            PlantaDto dto = new PlantaDto();
+            dto.setNombre("Planta sin fechaCreacion");
+            dto.setEtapa(NuevaEtapa.VEGETACION);
+            // fechaCreacion deliberately omitted (FormularioPlanta never sends it)
+
+            DtoMapper.plantaDtoToPlanta(planta, dto, null, null, null);
+
+            assertEquals(fechaCreacion, planta.getFechaCreacion(),
+                    "fechaCreacion es server-managed y debe sobrevivir un update parcial");
+        }
+
+        private Planta plantaBase() {
+            Planta planta = new Planta();
+            planta.setNombre("Planta mapper test");
+            planta.setEtapa(NuevaEtapa.VEGETACION);
+            planta.setProduccion(0);
+            return planta;
         }
     }
 }

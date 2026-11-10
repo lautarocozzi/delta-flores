@@ -2,10 +2,13 @@ package DeltaFlores.web.dto;
 
 import DeltaFlores.web.entities.NuevaEtapa;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,6 +47,18 @@ public class PlantaDto implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fechaFin;
+
+    @JsonProperty("fecha_siembra")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @PastOrPresent(message = "La fecha de siembra no puede ser futura")
+    private LocalDate fechaSiembra;
+
+    @AssertTrue(message = "La fecha de siembra no puede ser anterior a 1900-01-01")
+    @JsonIgnore
+    public boolean isFechaSiembraValida() {
+        return fechaSiembra == null || !fechaSiembra.isBefore(LocalDate.of(1900, 1, 1));
+    }
 
     private List<Long> eventIds;
 

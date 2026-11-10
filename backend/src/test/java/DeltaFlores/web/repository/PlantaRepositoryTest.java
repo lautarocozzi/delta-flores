@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.Rollback;
@@ -46,6 +47,9 @@ class PlantaRepositoryTest {
 
     @Autowired
     private CepaRepository cepaRepository;
+
+    @Autowired
+    private TestEntityManager entityManager;
 
     private User testUser;
     private Sala testSala;
@@ -194,5 +198,47 @@ class PlantaRepositoryTest {
             assertThat(planta.getSala()).isNotNull();
             assertThat(planta.getZona()).isNotNull();
         }
+    }
+
+    // =========================================================================
+    // fechaSiembra persistence tests (SD-1)
+    // =========================================================================
+
+    @Test
+    @DisplayName("should persist an explicit fechaSiembra after flush/clear/find")
+    void testExplicitFechaSiembraPersists() {
+        LocalDate siembra = LocalDate.of(2026, 1, 10);
+        Planta planta = buildPlanta("Repo Planta Siembra Explicita");
+        planta.setFechaSiembra(siembra);
+
+        Long id = plantaRepository.saveAndFlush(planta).getId();
+        entityManager.clear();
+
+        Planta reloaded = plantaRepository.findById(id).orElseThrow();
+        assertThat(reloaded.getFechaSiembra()).isEqualTo(siembra);
+    }
+
+    @Test
+    @DisplayName("should apply today as default fechaSiembra when null on insert")
+    void testNullFechaSiembraDefaultsToToday() {
+        Planta planta = buildPlanta("Repo Planta Siembra Default");
+        assertThat(planta.getFechaSiembra()).isNull();
+
+        Long id = plantaRepository.saveAndFlush(planta).getId();
+        entityManager.clear();
+
+        Planta reloaded = plantaRepository.findById(id).orElseThrow();
+        assertThat(reloaded.getFechaSiembra()).isEqualTo(LocalDate.now());
+    }
+
+    private Planta buildPlanta(String nombre) {
+        Planta planta = new Planta();
+        planta.setNombre(nombre);
+        planta.setUser(testUser);
+        planta.setCepa(testCepa);
+        planta.setSala(testSala);
+        planta.setEtapa(NuevaEtapa.VEGETACION);
+        planta.setProduccion(0);
+        return planta;
     }
 }

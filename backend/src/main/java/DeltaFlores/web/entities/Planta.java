@@ -72,6 +72,11 @@ public class Planta {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern="yyyy-MM-dd")
     private LocalDate fechaFin;
 
+    @Column(name = "fecha_siembra")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate fechaSiembra;
+
     private String ubicacion;
 
     @Column(name = "imagen_url")
@@ -82,4 +87,11 @@ public class Planta {
             joinColumns = @JoinColumn(name = "planta_id"),
             inverseJoinColumns = @JoinColumn(name = "events_id"))
     private List<PlantEvent> events=new ArrayList<>();
+
+    @PrePersist
+    void applyDefaultFechaSiembra() {
+        if (fechaSiembra == null) {
+            fechaSiembra = LocalDate.now();
+        }
+    }
 }
