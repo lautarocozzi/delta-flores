@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Flores Delta — Arranque, datos mock y mapa de la app</title>
+<style>
+  :root {
+    --bg: #0a100e;
+    --bg-2: #0e1613;
+    --panel: #121c18;
+    --panel-2: #16231e;
+    --line: #24382f;
+    --line-2: #2f4a3d;
+    --text: #e7f2ec;
+    --muted: #93a99f;
+    --accent: #34d399;
+    --accent-2: #a3e635;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --violet: #c084fc;
+    --radius: 14px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 600px at 12% -8%, rgba(52, 211, 153, .13), transparent 60%),
+      radial-gradient(900px 500px at 92% 0%, rgba(163, 230, 53, .08), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code, pre { font-family: var(--mono); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- Hero ---------- */
+  header.hero {
+    padding: 72px 0 40px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(52, 211, 153, .09);
+    border: 1px solid rgba(52, 211, 153, .25);
+    padding: 6px 12px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 5vw, 3.4rem);
+    line-height: 1.08;
+    margin: 0 0 14px;
+    letter-spacing: -.02em;
+  }
+
+  h1 .leaf { color: var(--accent-2); }
+
+  .lede {
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    color: var(--muted);
+    max-width: 760px;
+    margin: 0 0 28px;
+  }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .badge {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    background: var(--panel);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .badge b { color: var(--accent); font-weight: 700; }
+
+  /* ---------- Nav ---------- */
+  nav.toc {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 16, 14, .86);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    margin: 0 -24px 44px;
+    padding: 12px 24px;
+  }
+  nav.toc ul {
+    list-style: none;
+    display: flex;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav.toc ul::-webkit-scrollbar { display: none; }
+  nav.toc a {
+    display: inline-block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 7px 12px;
+    border-radius: 9px;
+    white-space: nowrap;
+  }
+  nav.toc a:hover { color: var(--text); background: var(--panel); text-decoration: none; }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 72px; }
+
+  h2 {
+    font-size: clamp(1.4rem, 2.4vw, 1.85rem);
+    letter-spacing: -.015em;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: .72em;
+    color: var(--accent);
+    background: rgba(52, 211, 153, .1);
+    border: 1px solid rgba(52, 211, 153, .25);
+    border-radius: 8px;
+    padding: 3px 9px;
+  }
+  h3 {
+    font-size: 1.05rem;
+    margin: 32px 0 12px;
+    color: var(--text);
+  }
+  .sub { color: var(--muted); margin: 0 0 24px; max-width: 820px; }
+
+  /* ---------- Cards / grids ---------- */
+  .grid { display: grid; gap: 16px; }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card h4 {
+    margin: 0 0 6px;
+    font-size: .98rem;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .card p { margin: 0; color: var(--muted); font-size: .92rem; }
+  .card .kicker {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+  .dot.green { background: var(--accent); box-shadow: 0 0 0 3px rgba(52,211,153,.16); }
+  .dot.lime  { background: var(--accent-2); box-shadow: 0 0 0 3px rgba(163,230,53,.16); }
+  .dot.blue  { background: var(--info); box-shadow: 0 0 0 3px rgba(96,165,250,.16); }
+  .dot.violet{ background: var(--violet); box-shadow: 0 0 0 3px rgba(192,132,252,.16); }
+  .dot.amber { background: var(--warn); box-shadow: 0 0 0 3px rgba(251,191,36,.16); }
+
+  /* ---------- Steps ---------- */
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  ol.steps > li {
+    counter-increment: step;
+    position: relative;
+    padding: 0 0 26px 56px;
+    border-left: 1px solid var(--line-2);
+    margin-left: 17px;
+  }
+  ol.steps > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  ol.steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: -18px;
+    top: -2px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .9rem;
+    color: #04120c;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+  ol.steps h4 { margin: 0 0 8px; font-size: 1rem; }
+  ol.steps p { margin: 0 0 10px; color: var(--muted); font-size: .93rem; }
+
+  /* ---------- Code blocks ---------- */
+  .code {
+    position: relative;
+    background: #07100c;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin: 10px 0 14px;
+    overflow: hidden;
+  }
+  .code .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,.02);
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .code pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13.2px;
+    line-height: 1.65;
+    color: #d8f3e6;
+  }
+  .code pre .cmt { color: #5f7a6f; }
+  .copy {
+    appearance: none;
+    border: 1px solid var(--line-2);
+    background: var(--panel);
+    color: var(--muted);
+    font: 600 11px var(--sans);
+    padding: 4px 9px;
+    border-radius: 7px;
+    cursor: pointer;
+    letter-spacing: .04em;
+  }
+  .copy:hover { color: var(--text); border-color: var(--accent); }
+  .copy.ok { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; min-width: 620px; }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(255,255,255,.025);
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody td { padding: 11px 14px; border-bottom: 1px solid rgba(36,56,47,.6); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(52,211,153,.035); }
+  td.mono, .mono { font-family: var(--mono); font-size: .85rem; }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .pill.green { color: var(--accent); border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); }
+  .pill.lime  { color: var(--accent-2); border-color: rgba(163,230,53,.4); background: rgba(163,230,53,.08); }
+  .pill.blue  { color: var(--info); border-color: rgba(96,165,250,.4); background: rgba(96,165,250,.08); }
+  .pill.violet{ color: var(--violet); border-color: rgba(192,132,252,.4); background: rgba(192,132,252,.08); }
+  .pill.amber { color: var(--warn); border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); }
+
+  /* ---------- Architecture diagram ---------- */
+  .arch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 26px 22px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .arch .tier {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    width: 100%;
+  }
+  .arch .node {
+    flex: 0 1 380px;
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: var(--bg-2);
+    text-align: center;
+  }
+  .arch .tier.duo .node { flex: 0 1 250px; }
+  .arch .node .name { font-weight: 700; font-size: .95rem; }
+  .arch .node .port { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .arch .node .desc { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .arch .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .arch .flow span { color: var(--accent); font-size: 16px; line-height: 1; }
+
+  /* ---------- Domain diagram ---------- */
+  .domain {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+  .entity {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    padding: 13px 14px;
+  }
+  .entity .ename {
+    font-family: var(--mono);
+    font-size: .86rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .entity ul { margin: 0; padding-left: 16px; color: var(--muted); font-size: .8rem; line-height: 1.55; }
+  .entity ul li::marker { color: var(--line-2); }
+  .rel {
+    grid-column: 1 / -1;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    border-left: 2px solid var(--line-2);
+    padding: 6px 0 6px 12px;
+  }
+  .rel b { color: var(--text); font-weight: 600; }
+
+  /* ---------- Event grid ---------- */
+  .events { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .event {
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 12px 14px;
+    background: var(--panel);
+  }
+  .event .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: .04em;
+  }
+  .event .title { font-weight: 700; font-size: .9rem; margin: 2px 0 4px; }
+  .event .fields { font-size: .78rem; color: var(--muted); }
+
+  /* ---------- Route map ---------- */
+  .routes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .route {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 11px 13px;
+    background: var(--panel);
+  }
+  .route code {
+    font-size: 11.5px;
+    color: var(--accent);
+    background: rgba(52,211,153,.07);
+    border: 1px solid rgba(52,211,153,.2);
+    padding: 2px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .route .rdesc { font-size: .82rem; color: var(--muted); line-height: 1.45; }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    display: flex;
+    gap: 14px;
+    border: 1px solid var(--line-2);
+    border-left: 3px solid var(--accent);
+    background: rgba(52,211,153,.05);
+    border-radius: 11px;
+    padding: 14px 16px;
+    margin: 16px 0;
+  }
+  .callout.warn { border-left-color: var(--warn); background: rgba(251,191,36,.05); }
+  .callout.danger { border-left-color: var(--danger); background: rgba(248,113,113,.05); }
+  .callout .ico { font-size: 1.1rem; line-height: 1.4; }
+  .callout p { margin: 0; font-size: .9rem; color: var(--text); }
+  .callout p + p { margin-top: 6px; }
+  .callout strong { color: var(--text); }
+
+  /* ---------- Stat strip ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .stat {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--panel);
+  }
+  .stat .n { font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; color: var(--accent); line-height: 1.1; }
+  .stat .l { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    color: var(--muted);
+    font-size: .82rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 980px) {
+    .grid.four, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .arch { grid-template-columns: 1fr; }
+    .domain { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px 72px; }
+    .grid.two, .grid.three, .grid.four, .stats, .domain { grid-template-columns: 1fr; }
+    header.hero { padding-top: 48px; }
+  }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    nav.toc { display: none; }
+    .card, .entity, .event, .route, .arch, .stat, .table-wrap { background: #fff; border-color: #ccc; }
+    .code { background: #f6f6f6; }
+    .code pre { color: #111; }
+    .copy { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="eyebrow"><span class="dot green"></span> Guía operativa · v2026</div>
+    <h1>Flores <span class="leaf">Delta</span></h1>
+    <p class="lede">
+      Sistema de gestión de cultivo profesional. Salas con grilla de plantas por zonas, bitácora de
+      eventos por planta, catálogo de genéticas, tareas programadas y comunidad.
+      Este documento cubre <strong>cómo levantar los servicios</strong>, <strong>qué datos mock existen</strong>
+      y un <strong>mapa visual de la aplicación</strong>.
+    </p>
+    <div class="badges">
+      <span class="badge">Frontend <b>React 18.3</b></span>
+      <span class="badge">Backend <b>Spring Boot 3.5.6</b></span>
+      <span class="badge">Java <b>21</b></span>
+      <span class="badge">PostgreSQL <b>15</b></span>
+      <span class="badge">MinIO <b>opcional</b></span>
+      <span class="badge">Docker <b>Compose</b></span>
+      <span class="badge">Vite <b>5</b></span>
+    </div>
+  </header>
+
+  <!-- ============ NAV ============ -->
+  <nav class="toc" aria-label="Índice">
+    <ul>
+      <li><a href="#arranque">Arranque</a></li>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#comandos">Comandos</a></li>
+      <li><a href="#mock">Datos mock</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#dominio">Modelo de dominio</a></li>
+      <li><a href="#eventos">Eventos</a></li>
+      <li><a href="#rutas">Rutas</a></li>
+      <li><a href="#notas">Notas</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============ 1. ARRANQUE ============ -->
+  <section id="arranque">
+    <h2><span class="num">01</span> Arranque de los servicios</h2>
+    <p class="sub">
+      Todo corre con Docker Compose. El stack base levanta PostgreSQL, el backend y el frontend con
+      hot-reload. MinIO es un perfil aparte y solo hace falta si vas a subir fotos o media.
+    </p>
+
+    <ol class="steps">
+      <li>
+        <h4>Preparar el entorno <span class="pill">una sola vez</span></h4>
+        <p>Copiá el archivo de ejemplo. Los valores por defecto alcanzan para desarrollo local.</p>
+        <div class="code">
+          <div class="code-head"><span>Terminal</span><button class="copy" type="button">Copiar</button></div>
+          <pre><span class="cmt"># desde la raíz del repo</span>
+cp .env.example .env</pre>
+        </div>
+      </li>
+
+      <li>
+        <h4>Levantar el stack base</h4>
+        <p>PostgreSQL + backend (Spring Boot) + frontend (Vite). La primera vez compila las imágenes.</p>
+        <div class="code">
+          <div class="code-head"><span>Terminal</span><button class="copy" type="button">Copiar</button></div>
+          <pre>docker compose up -d --build</pre>
+        </div>
+      </li>
+
+      <li>
+        <h4>Opcional: habilitar MinIO</h4>
+        <p>Necesario para fotos, avatares y cualquier media. Sin este perfil el almacenamiento de archivos no está disponible.</p>
+        <div class="code">
+          <div class="code-head"><span>Terminal</span><button class="copy" type="button">Copiar</button></div>
+          <pre>docker compose --profile minio up -d --build</pre>
+        </div>
+      </li>
+
+      <li>
+        <h4>Verificar que todo esté arriba</h4>
+        <p>El backend espera a que PostgreSQL esté <em>healthy</em>. El frontend espera al backend.</p>
+        <div class="code">
+          <div class="code-head"><span>Terminal</span><button class="copy" type="button">Copiar</button></div>
+          <pre>docker compose ps
+docker compose logs -f</pre>
+        </div>
+      </li>
+    </ol>
+
+    <h3>URLs resultantes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Servicio</th><th>URL</th><th>Nota</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Frontend</td><td class="mono">http://localhost:5173</td><td>Vite dev server con hot-reload</td></tr>
+          <tr><td>Backend API</td><td class="mono">http://localhost:8080</td><td>Spring Boot</td></tr>
+          <tr><td>Health check</td><td class="mono">http://localhost:8080/actuator/health</td><td>Usado por el healthcheck de Compose</td></tr>
+          <tr><td>Swagger UI</td><td class="mono">http://localhost:8080/swagger-ui.html</td><td>OpenAPI en <span class="mono">/v3/api-docs</span></td></tr>
+          <tr><td>MinIO API</td><td class="mono">http://localhost:9000</td><td>Solo con <span class="mono">--profile minio</span></td></tr>
+          <tr><td>MinIO Console</td><td class="mono">http://localhost:9001</td><td>Solo con <span class="mono">--profile minio</span></td></tr>
+          <tr><td>PostgreSQL</td><td class="mono">localhost:5432</td><td>DB <span class="mono">flores_delta_db</span> · user <span class="mono">flores_user</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Credenciales de desarrollo</h3>
+    <div class="grid two">
+      <div class="card">
+        <div class="kicker">Seed automático</div>
+        <h4><span class="dot green"></span> Usuarios creados al bootear</h4>
+        <p>
+          <span class="mono">admin@floresdelta.com</span> · <span class="mono">grower1@floresdelta.com</span> ·
+          <span class="mono">grower2@floresdelta.com</span> · <span class="mono">grower3@floresdelta.com</span> ·
+          <span class="mono">test@floresdelta.com</span><br />
+          Password común: <span class="mono">123456</span>
+        </p>
+      </div>
+      <div class="card">
+        <div class="kicker">Seed manual (endpoint)</div>
+        <h4><span class="dot lime"></span> Administrador alternativo</h4>
+        <p>
+          <span class="mono">GET /api/users/seed-admin</span><br />
+          Crea <span class="mono">admin@delta.com</span> / <span class="mono">admin123</span>.
+          Es el par que también publica el <span class="mono">README.md</span>.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ico">⚠️</span>
+      <div>
+        <p><strong>MinIO no está en el perfil por defecto.</strong> Si arrancás sin <span class="mono">--profile minio</span>, el backend corre con <span class="mono">SPRING_PROFILES_ACTIVE=prod</span> (que activa el storage MinIO) pero el servicio no está levantado. Para trabajar con media, usá siempre el perfil.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. SERVICIOS ============ -->
+  <section id="servicios">
+    <h2><span class="num">02</span> Servicios y arquitectura</h2>
+    <p class="sub">Cuatro contenedores en la red <span class="mono">flores-network</span>, con volúmenes persistentes para la base y para los archivos.</p>
+
+    <div class="arch" role="img" aria-label="Diagrama de arquitectura: navegador, frontend Vite, backend Spring Boot, PostgreSQL y MinIO">
+      <div class="tier">
+        <div class="node">
+          <div class="name">Navegador</div>
+          <div class="desc">SPA React</div>
+        </div>
+      </div>
+      <div class="flow"><span>↓</span>HTTP</div>
+      <div class="tier">
+        <div class="node">
+          <div class="name">Frontend</div>
+          <div class="port">:5173 → :8081</div>
+          <div class="desc">Vite dev · proxy <span class="mono">/api</span> y <span class="mono">/login</span></div>
+        </div>
+      </div>
+      <div class="flow"><span>↓</span>proxy</div>
+      <div class="tier">
+        <div class="node">
+          <div class="name">Backend</div>
+          <div class="port">:8080</div>
+          <div class="desc">Spring Boot · JWT · JPA · springdoc</div>
+        </div>
+      </div>
+      <div class="flow"><span>↓</span>JDBC · S3</div>
+      <div class="tier duo">
+        <div class="node">
+          <div class="name">PostgreSQL</div>
+          <div class="port">:5432</div>
+          <div class="desc">volumen <span class="mono">postgres_data</span></div>
+        </div>
+        <div class="node">
+          <div class="name">MinIO <span class="pill amber">perfil</span></div>
+          <div class="port">:9000 · :9001</div>
+          <div class="desc">volumen <span class="mono">minio_data</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Detalle de contenedores</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Servicio</th><th>Imagen / build</th><th>Puertos</th><th>Volumen</th><th>Depende de</th><th>Perfil</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>postgres</strong></td>
+            <td class="mono">postgres:15-alpine</td>
+            <td class="mono">5432:5432</td>
+            <td class="mono">postgres_data</td>
+            <td>—</td>
+            <td><span class="pill">siempre</span></td>
+          </tr>
+          <tr>
+            <td><strong>backend</strong></td>
+            <td class="mono">build ./backend</td>
+            <td class="mono">8080:8080</td>
+            <td>—</td>
+            <td><span class="mono">postgres: healthy</span></td>
+            <td><span class="pill">siempre</span></td>
+          </tr>
+          <tr>
+            <td><strong>frontend</strong></td>
+            <td class="mono">build ./frontend</td>
+            <td class="mono">5173:8081</td>
+            <td class="mono">src, public, index.html, vite.config.ts</td>
+            <td><span class="mono">backend</span></td>
+            <td><span class="pill">siempre</span></td>
+          </tr>
+          <tr>
+            <td><strong>minio</strong></td>
+            <td class="mono">minio/minio:latest</td>
+            <td class="mono">9000:9000<br />9001:9001</td>
+            <td class="mono">minio_data</td>
+            <td>—</td>
+            <td><span class="pill amber">minio / full</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Variables de entorno relevantes</h3>
+    <div class="grid two">
+      <div class="card">
+        <div class="kicker">Backend</div>
+        <h4><span class="dot blue"></span> Base de datos</h4>
+        <p class="mono" style="font-size:.8rem; line-height:1.9;">
+          DB_HOST · DB_PORT · DB_NAME<br />
+          DB_USERNAME · DB_PASSWORD<br />
+          SPRING_PROFILES_ACTIVE<br />
+          JWT_SECRET · JWT_EXPIRATION
+        </p>
+      </div>
+      <div class="card">
+        <div class="kicker">Backend · Frontend</div>
+        <h4><span class="dot violet"></span> Almacenamiento y cliente</h4>
+        <p class="mono" style="font-size:.8rem; line-height:1.9;">
+          MINIO_ENDPOINT · MINIO_ACCESS_KEY<br />
+          MINIO_SECRET_KEY · MINIO_BUCKET_NAME<br />
+          VITE_BACKEND_URL · VITE_PROXY_TARGET
+        </p>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:14px;">
+      Los valores por defecto están pensados para desarrollo. <strong>Cambiá <span class="mono">JWT_SECRET</span>,
+      <span class="mono">DB_PASSWORD</span> y las claves de MinIO antes de cualquier despliegue.</strong>
+    </p>
+  </section>
+
+  <!-- ============ 3. COMANDOS ============ -->
+  <section id="comandos">
+    <h2><span class="num">03</span> Comandos útiles</h2>
+    <p class="sub">Copiá y pegá. Los mismos comandos funcionan con o sin el perfil de MinIO.</p>
+
+    <div class="grid two">
+      <div class="code">
+        <div class="code-head"><span>Levantar</span><button class="copy" type="button">Copiar</button></div>
+        <pre>docker compose up -d --build
+docker compose --profile minio up -d --build</pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Parar (mantiene datos)</span><button class="copy" type="button">Copiar</button></div>
+        <pre>docker compose stop
+docker compose stop backend
+docker compose stop frontend</pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Bajar contenedores</span><button class="copy" type="button">Copiar</button></div>
+        <pre>docker compose down
+docker compose --profile minio down</pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Bajar y borrar volúmenes</span><button class="copy" type="button">Copiar</button></div>
+        <pre><span class="cmt"># ⚠️ ELIMINA la base de datos y los archivos</span>
+docker compose down -v</pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Logs</span><button class="copy" type="button">Copiar</button></div>
+        <pre>docker compose logs -f
+docker compose logs -f backend
+docker compose logs -f frontend</pre>
+      </div>
+
+      <div class="code">
+        <div class="code-head"><span>Rebuild completo</span><button class="copy" type="button">Copiar</button></div>
+        <pre>docker compose up -d --build --force-recreate</pre>
+      </div>
+    </div>
+
+    <h3>Desarrollo local sin Docker para el código</h3>
+    <div class="grid two">
+      <div class="code">
+        <div class="code-head"><span>Backend</span><button class="copy" type="button">Copiar</button></div>
+        <pre><span class="cmt"># requiere PostgreSQL en localhost:5432</span>
+docker compose up -d postgres
+cd backend
+./mvnw spring-boot:run</pre>
+      </div>
+      <div class="code">
+        <div class="code-head"><span>Frontend</span><button class="copy" type="button">Copiar</button></div>
+        <pre>cd frontend
+npm install
+npm run dev</pre>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="ico">💡</span>
+      <div>
+        <p>El frontend dentro de Docker ya tiene hot-reload: editás en <span class="mono">frontend/src/</span> y se recarga solo. Si corrés <span class="mono">npm run dev</span> fuera de Docker, Vite escucha en <span class="mono">http://localhost:8081</span> según <span class="mono">vite.config.ts</span>; el mapeo <span class="mono">5173</span> es el del contenedor.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. MOCK DATA ============ -->
+  <section id="mock">
+    <h2><span class="num">04</span> Datos mock</h2>
+    <p class="sub">
+      El proyecto <strong>no tiene un dataset demo completo</strong>. Solo se siembran usuarios, de forma
+      automática en cada arranque. Todo lo demás (salas, genéticas, plantas, eventos) lo creás vos desde la UI.
+    </p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">5</div><div class="l">usuarios sembrados</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">salas / zonas / plantas</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">cepas / eventos</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">seeder automático</div></div>
+    </div>
+
+    <h3>Cómo funciona el seeder</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Aspecto</th><th>Detalle</th></tr></thead>
+        <tbody>
+          <tr><td>Clase</td><td class="mono">backend/src/main/java/DeltaFlores/web/config/DatabaseSeeder.java</td></tr>
+          <tr><td>Tipo</td><td><span class="mono">CommandLineRunner</span> · <span class="mono">@Component</span> sin <span class="mono">@Profile</span></td></tr>
+          <tr><td>Cuándo corre</td><td>En <strong>todos los entornos</strong>, en cada booteo</td></tr>
+          <tr><td>Guarda</td><td>Si <span class="mono">userRepository.count() &gt; 0</span>, no hace nada</td></tr>
+          <tr><td>Qué crea</td><td>Solo 5 usuarios (1 admin + 4 growers)</td></tr>
+          <tr><td>Password</td><td><span class="mono">123456</span> para los 5 (BCrypt)</td></tr>
+          <tr><td>Reset</td><td><span class="mono">docker compose down -v</span> y volver a levantar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Usuarios sembrados</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Email</th><th>Nombre</th><th>Rol</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">admin@floresdelta.com</td><td>Admin Master</td><td><span class="pill green">ROLE_ADMIN</span></td></tr>
+          <tr><td class="mono">grower1@floresdelta.com</td><td>Juan Cultivo</td><td><span class="pill blue">ROLE_GROWER</span></td></tr>
+          <tr><td class="mono">grower2@floresdelta.com</td><td>Maria Green</td><td><span class="pill blue">ROLE_GROWER</span></td></tr>
+          <tr><td class="mono">grower3@floresdelta.com</td><td>Pedro Roots</td><td><span class="pill blue">ROLE_GROWER</span></td></tr>
+          <tr><td class="mono">test@floresdelta.com</td><td>Test User</td><td><span class="pill blue">ROLE_GROWER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Lo que NO se siembra: orden de creación manual</h3>
+    <p class="sub">Después del primer login, hay dependencias duras: una planta no existe sin cepa ni sala.</p>
+
+    <div class="grid three">
+      <div class="card">
+        <div class="kicker">Paso 1</div>
+        <h4><span class="dot lime"></span> Cepa</h4>
+        <p>Genética. Obligatoria: <span class="mono">Planta.cepa_id</span> es <span class="mono">NOT NULL</span>.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Paso 2</div>
+        <h4><span class="dot green"></span> Sala</h4>
+        <p>Cuarto de cultivo. Obligatoria: <span class="mono">Planta.sala_id</span> es <span class="mono">NOT NULL</span>.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Paso 3</div>
+        <h4><span class="dot blue"></span> Zona <span class="pill">opcional</span></h4>
+        <p>Grilla dentro de la sala. La planta se ubica por <span class="mono">columnaEnZona</span> / <span class="mono">filaEnZona</span>.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Paso 4</div>
+        <h4><span class="dot violet"></span> Planta</h4>
+        <p>Etapa inicial: germinación, plantín, vegetación, floración o cosechada.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Paso 5</div>
+        <h4><span class="dot amber"></span> Nutrientes <span class="pill">opcional</span></h4>
+        <p>Necesarios antes de registrar un evento de tipo <span class="mono">NUTRIENT</span>.</p>
+      </div>
+      <div class="card">
+        <div class="kicker">Paso 6</div>
+        <h4><span class="dot green"></span> Eventos</h4>
+        <p>Riego, cambio de etapa, notas, poda, defoliación, medición, nutrientes.</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="ico">🧪</span>
+      <div>
+        <p><strong>No hay mocks de frontend.</strong> No existe MSW, ni <span class="mono">src/mocks/</span>, ni fixtures, ni flag <span class="mono">VITE_USE_MOCK</span>. El frontend siempre habla contra el backend real.</p>
+        <p><strong>No hay <span class="mono">data.sql</span> ni migraciones.</strong> El esquema lo administra Hibernate con <span class="mono">ddl-auto=update</span>; no hay Flyway ni Liquibase.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. STACK ============ -->
+  <section id="stack">
+    <h2><span class="num">05</span> Stack en una vista</h2>
+    <p class="sub">Tres capas, sin servicios externos obligatorios más allá de PostgreSQL.</p>
+
+    <div class="grid three">
+      <div class="card">
+        <div class="kicker">Frontend</div>
+        <h4><span class="dot green"></span> React + Vite</h4>
+        <p>
+          React 18.3 · TypeScript 5.8 · Vite 5 (SWC) · react-router-dom 6 ·
+          TanStack Query 5 · Zustand 5 · axios · zod 4 + react-hook-form ·
+          Radix/shadcn · Tailwind 3.4 · Recharts · framer-motion · sonner.
+        </p>
+      </div>
+      <div class="card">
+        <div class="kicker">Backend</div>
+        <h4><span class="dot blue"></span> Spring Boot</h4>
+        <p>
+          Java 21 · Spring Boot 3.5.6 · Spring Security (JWT stateless) ·
+          Spring Data JPA / Hibernate · springdoc OpenAPI · MinIO SDK 8.5.9 ·
+          Spring Mail · Actuator · Log4j2 · Lombok.
+        </p>
+      </div>
+      <div class="card">
+        <div class="kicker">Infraestructura</div>
+        <h4><span class="dot violet"></span> Docker</h4>
+        <p>
+          Docker Compose · PostgreSQL 15-alpine · MinIO ·
+          multi-stage Dockerfiles · Nginx para el frontend de producción ·
+          volúmenes persistentes para DB y media.
+        </p>
+      </div>
+    </div>
+
+    <h3>Seguridad y sesión</h3>
+    <div class="grid two">
+      <div class="card">
+        <h4><span class="dot green"></span> JWT en memoria + refresh HttpOnly</h4>
+        <p>El access token vive en memoria (no en localStorage). El refresh viaja en cookie HttpOnly y se renueva al recargar.</p>
+      </div>
+      <div class="card">
+        <h4><span class="dot blue"></span> Sesiones multi-dispositivo</h4>
+        <p>Cada dispositivo registra <span class="mono">deviceInfo</span>, <span class="mono">ipAddress</span> y <span class="mono">userAgent</span>, con revocación individual.</p>
+      </div>
+      <div class="card">
+        <h4><span class="dot violet"></span> Validación de respuestas</h4>
+        <p>Zod valida los DTOs que llegan del backend en runtime, no solo en tiempo de compilación.</p>
+      </div>
+      <div class="card">
+        <h4><span class="dot amber"></span> Roles</h4>
+        <p><span class="mono">ROLE_SUPER_ADMIN</span> · <span class="mono">ROLE_ADMIN</span> · <span class="mono">ROLE_GROWER</span>. El panel de administración exige admin o superior.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6. DOMINIO ============ -->
+  <section id="dominio">
+    <h2><span class="num">06</span> Modelo de dominio</h2>
+    <p class="sub">Entidades principales y sus relaciones. Las flechas describen la cardinalidad en palabras.</p>
+
+    <div class="domain">
+      <div class="entity">
+        <div class="ename">User</div>
+        <ul>
+          <li>username / email</li>
+          <li>rol (AppRole)</li>
+          <li>isPublic, imagen</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Sala</div>
+        <ul>
+          <li>horasLuz, humedad</li>
+          <li>temperaturaAmbiente</li>
+          <li>TipoAmbiente, isPublic</li>
+          <li>isPinned, imagenUrl</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Zona</div>
+        <ul>
+          <li>posicionX / posicionY</li>
+          <li>columnas / filas</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Cepa</div>
+        <ul>
+          <li>geneticaParental</li>
+          <li>dominancia</li>
+          <li>thc / cbd</li>
+          <li>aromaSabor, abreviatura</li>
+        </ul>
+      </div>
+
+      <div class="rel"><b>User 1 — N Sala</b> · una sala pertenece a un usuario y puede compartirse</div>
+
+      <div class="entity">
+        <div class="ename">Planta</div>
+        <ul>
+          <li>nombre</li>
+          <li>NuevaEtapa</li>
+          <li>fechaSiembra / fechaFin</li>
+          <li>produccion, isPublic</li>
+          <li>columnaEnZona / filaEnZona</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">PlantEvent</div>
+        <ul>
+          <li>abstracta</li>
+          <li>SINGLE_TABLE</li>
+          <li>discriminador event_type</li>
+          <li>fecha</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">SalaColaborador</div>
+        <ul>
+          <li>TipoColaborador</li>
+          <li>EDITOR / LECTURA</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Nutriente</div>
+        <ul>
+          <li>catálogo de nutrientes</li>
+          <li>usado por NUTRIENT</li>
+        </ul>
+      </div>
+
+      <div class="rel"><b>Sala 1 — N Zona</b> · <b>Zona 1 — N Planta</b> · <b>Cepa 1 — N Planta</b> · <b>Planta N — M PlantEvent</b> (tabla <span class="mono">plants_has_events</span>)</div>
+
+      <div class="entity">
+        <div class="ename">TareaProgramada</div>
+        <ul>
+          <li>TipoRecurrencia</li>
+          <li>scheduler cada 60 s</li>
+          <li>asignable a sala/planta</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Favorite</div>
+        <ul>
+          <li>polimórfico</li>
+          <li>favorableType / Id</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Notificacion</div>
+        <ul>
+          <li>eventos del sistema</li>
+          <li>por usuario</li>
+        </ul>
+      </div>
+      <div class="entity">
+        <div class="ename">Post · PostReply · PostVote</div>
+        <ul>
+          <li>comunidad</li>
+          <li>CategoriaPost / TipoPost</li>
+          <li>TipoVoto</li>
+        </ul>
+      </div>
+
+      <div class="rel"><b>User 1 — N Post</b> · <b>User 1 — N UserSession</b> (multi-dispositivo) · <b>User 1 — N Favorite</b></div>
+    </div>
+  </section>
+
+  <!-- ============ 7. EVENTOS ============ -->
+  <section id="eventos">
+    <h2><span class="num">07</span> Los 7 tipos de evento</h2>
+    <p class="sub">
+      Todos heredan de <span class="mono">PlantEvent</span> y comparten <span class="mono">fecha</span>.
+      El discriminador es <span class="mono">event_type</span>. No existe un <span class="mono">PhotoEvent</span>:
+      las fotos viajan dentro de <span class="mono">NoteEvent.mediaUrls</span>.
+    </p>
+
+    <div class="events">
+      <div class="event">
+        <div class="tag">STAGE_CHANGE</div>
+        <div class="title">Cambio de etapa</div>
+        <div class="fields">nuevaEtapa · etapaAnterior</div>
+      </div>
+      <div class="event">
+        <div class="tag">WATERING</div>
+        <div class="title">Riego</div>
+        <div class="fields">phAgua · ecAgua · tempAgua</div>
+      </div>
+      <div class="event">
+        <div class="tag">NUTRIENT</div>
+        <div class="title">Nutrición</div>
+        <div class="fields">referencia a Nutriente</div>
+      </div>
+      <div class="event">
+        <div class="tag">NOTE</div>
+        <div class="title">Nota</div>
+        <div class="fields">text · mediaUrls</div>
+      </div>
+      <div class="event">
+        <div class="tag">PRUNING</div>
+        <div class="title">Poda</div>
+        <div class="fields">TipoPoda</div>
+      </div>
+      <div class="event">
+        <div class="tag">DEFOLIATION</div>
+        <div class="title">Defoliación</div>
+        <div class="fields">GradoDefoliacion</div>
+      </div>
+      <div class="event">
+        <div class="tag">MEASUREMENT</div>
+        <div class="title">Medición</div>
+        <div class="fields">horasLuz · humedad · temperatura · altura · distanciaLuz</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="ico">📈</span>
+      <div>
+        <p>Los eventos alimentan la <strong>bitácora maestra</strong>, el <strong>timeline semanal</strong> de <span class="mono">/plant/:id</span> y los gráficos del dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8. RUTAS ============ -->
+  <section id="rutas">
+    <h2><span class="num">08</span> Mapa de rutas</h2>
+    <p class="sub">Todas las rutas de la SPA. Las protegidas pasan por <span class="mono">ProtectedRoute</span>.</p>
+
+    <div class="routes">
+      <div class="route"><code>/ · /login</code><div class="rdesc">Ingreso</div></div>
+      <div class="route"><code>/register</code><div class="rdesc">Registro de usuario</div></div>
+      <div class="route"><code>/dashboard</code><div class="rdesc">KPIs, tarjetas de plantas y salas, actividad semanal, calendario, diario</div></div>
+      <div class="route"><code>/plant/:id</code><div class="rdesc">Detalle de planta: perfil, timeline semanal, bitácora de eventos</div></div>
+      <div class="route"><code>/plantas/:id/editar</code><div class="rdesc">Edición de planta</div></div>
+      <div class="route"><code>/bitacora</code><div class="rdesc">Bitácora maestra de todas las plantas, con filtros · alias <span class="mono">/bitacora-maestra</span></div></div>
+      <div class="route"><code>/comunidad</code><div class="rdesc">Feed de la comunidad</div></div>
+      <div class="route"><code>/comunidad/:postId</code><div class="rdesc">Post, respuestas y votos</div></div>
+      <div class="route"><code>/favoritos</code><div class="rdesc">Favoritos del usuario</div></div>
+      <div class="route"><code>/profile</code><div class="rdesc">Perfil</div></div>
+      <div class="route"><code>/profile/security</code><div class="rdesc">Seguridad de la cuenta</div></div>
+      <div class="route"><code>/profile/security/password</code><div class="rdesc">Cambio de contraseña</div></div>
+      <div class="route"><code>/profile/security/devices</code><div class="rdesc">Sesiones multi-dispositivo y revocación</div></div>
+      <div class="route"><code>/admin</code><div class="rdesc">Administración de usuarios <span class="pill green">admin</span></div></div>
+      <div class="route"><code>/admin/comunidad</code><div class="rdesc">Moderación de la comunidad <span class="pill green">admin</span></div></div>
+      <div class="route"><code>/:username</code><div class="rdesc">Perfil público</div></div>
+      <div class="route"><code>/:username/sala/:salaId</code><div class="rdesc">Sala pública con grilla de plantas</div></div>
+      <div class="route"><code>*</code><div class="rdesc">404</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 9. NOTAS ============ -->
+  <section id="notas">
+    <h2><span class="num">09</span> Notas y discrepancias conocidas</h2>
+    <p class="sub">Cosas que la documentación vieja dice distinto del código real. Verificado contra el repo.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tema</th><th>Documentación vieja</th><th>Realidad en el código</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Spring Boot</td>
+            <td><span class="mono">README.md</span> dice 3.2</td>
+            <td><span class="mono">pom.xml</span>: <strong>3.5.6</strong></td>
+          </tr>
+          <tr>
+            <td>Puerto del frontend</td>
+            <td><span class="mono">README-DOCKER.md</span> dice puerto 80 con Nginx</td>
+            <td>Compose mapea <strong>5173:8081</strong> (Vite dev). Nginx solo en la imagen de producción.</td>
+          </tr>
+          <tr>
+            <td>Compose</td>
+            <td><span class="mono">README-DOCKER.md</span> usa sintaxis <span class="mono">docker-compose</span> v1</td>
+            <td>Usá <span class="mono">docker compose</span> (v2)</td>
+          </tr>
+          <tr>
+            <td>MinIO público</td>
+            <td>—</td>
+            <td><span class="mono">minio.public.url</span> apunta a <span class="mono">localhost:9002</span>, que ningún compose mapea</td>
+          </tr>
+          <tr>
+            <td>Docs de arranque</td>
+            <td><span class="mono">docs/guides/INSTRUCCIONES_ARRANQUE.md</span> referencia <span class="mono">src/config/api.config.ts</span></td>
+            <td>Ese archivo ya no existe</td>
+          </tr>
+          <tr>
+            <td>Migraciones</td>
+            <td>—</td>
+            <td>No hay Flyway/Liquibase. Esquema por <span class="mono">ddl-auto=update</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout danger">
+      <span class="ico">🔐</span>
+      <div>
+        <p><strong>Antes de desplegar:</strong> cambiá <span class="mono">JWT_SECRET</span>, <span class="mono">DB_PASSWORD</span> y las credenciales de MinIO. Los valores del repo son placeholders de desarrollo. El seeder de usuarios corre en todos los entornos; considerá desactivarlo en producción.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Flores Delta · guía operativa generada desde el código del repo</span>
+    <span>Fuente de verdad: <span class="mono">docker-compose.yml</span>, <span class="mono">application.properties</span>, <span class="mono">pom.xml</span>, <span class="mono">package.json</span></span>
+  </footer>
+
+</div>
+
+<script>
+  // Copiar bloques de código al portapapeles, con fallback silencioso.
+  document.querySelectorAll('.code .copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.closest('.code').querySelector('pre');
+      var text = pre ? pre.innerText : '';
+      var done = function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copiado';
+        btn.classList.add('ok');
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove('ok');
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+</script>
+</body>
+</html>
